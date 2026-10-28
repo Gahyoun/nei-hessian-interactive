@@ -9,8 +9,22 @@ $$F(X)=\sum_{i<j}(d_{ij}-\delta_{ij})^2,\qquad \mathbf H_{ii}=\underbrace{2\sum_
 - network 5개: Zachary karate club, Lusseau dolphins, Les Misérables, college football, ca-netscience.
 - 각 terminal 에서 full Hessian 이 zero mode 3개 (translation 2 + rotation 1) 외에 모두 양수임을 확인했다.
 
+## NEI ensemble (red)
+NEI 는 terminal 분포의 statistic 이다. 각 network 를 census protocol (Uniform[0,1] 시작, seed 1000+m → SMACOF → L-BFGS) 로 $M=500$ 번 relax 해서
+$\mathrm{NEI}=\langle\operatorname{Var}_m(d_{ij})/\langle d_{ij}\rangle_m^2\rangle_{i<j}$ 를 계산하고, terminal 들을 기준 MDS terminal 에 Procrustes 로 맞춘 뒤
+ensemble-mean slice $\langle F_i\rangle_M$ 와 그 Hessian $\langle\mathbf H_{ii}\rangle_M=\langle K\rangle_M+\langle S\rangle_M$ 을 붉은 계열로 그린다.
+gauge 와 무관한 비교로 각 terminal 자기 위치의 $\mathbf H_{ii}^{(m)}$ eigenvalue 분포도 함께 그린다.
+
+| network | N | NEI (M=500) |
+|---|---|---|
+| karate | 34 | 0.0528 |
+| dolphins | 62 | 0.0443 |
+| Les Misérables | 77 | 0.0750 |
+| college football | 115 | 0.0531 |
+| ca-netscience | 352 | 0.0329 |
+
 ## Page
-- plan view 를 네 layer 로 분리: contour ($\log F_i$) · spring stress · network · eigenvector. overlay / split 전환.
+- plan view 를 다섯 layer 로 분리: contour ($\log F_i$) · spring stress · network · eigenvector · NEI ensemble. overlay / split 전환.
 - 3D landscape: top / tilt / side view, azimuth·elevation·zoom·height scale, drag·wheel·pinch.
 - live readout: $\mathbf H_{ii}=K+S$ (KaTeX), eigenvalue, curvature type.
 - design: KRDS 디자인 스타일 확장형 + 경상국립대 색·서체 (로고 없음). token 은 `assets/krds/` (Gahyoun/gnu-network-science-skills `templates/krds-design-system`).
@@ -18,6 +32,7 @@ $$F(X)=\sum_{i<j}(d_{ij}-\delta_{ij})^2,\qquad \mathbf H_{ii}=\underbrace{2\sum_
 ## Build
 ```sh
 python build/make_nets.py        # build/data/*.edgelist → build/nets/*.json (terminal, preset path, checks)
+python build/ensemble.py         # M=500 census terminals → build/nets/*_ens.npz (NEI, aligned terminals; ~10 min, 9 procs)
 python build/build_page.py       # → index.html
 node build/check_katex.cjs index.html   # math compile check (raw '<' in markup math 도 실패로 처리)
 ```

@@ -25,9 +25,16 @@ for k in ORDER:
                               for b in np.eye(2)] for a in np.eye(2)])
     fd = float(np.abs(Hfd - Hii).max() / np.abs(Hii).max()); assert fd < 1e-5
     m['check'].update(F=float(F), frac_comp=float((dd < D)[iu].mean()), fd=fd)
+    # NEI ensemble: aligned terminals as int16 offsets from the reference centre (resolution ~ span / 65000)
+    z = np.load(os.path.join(HERE, 'nets', k + '_ens.npz'))
+    Xa = z['Xa']; c0 = X.mean(0); sc = float(np.abs(Xa - c0).max() / 32000)
+    q = np.round((Xa - c0) / sc).astype('<i2')
+    assert np.abs(q.astype(float) * sc + c0 - Xa).max() < sc
+    m['ens'] = dict(M=int(len(Xa)), nei=float(z['nei']), c=c0.tolist(), s=sc, q=base64.b64encode(q.tobytes()).decode(),
+                    Fmin=float(z['F'].min()), pct=float((z['F'] < F).mean()), Fmed=float(np.median(z['F'])), Fmax=float(z['F'].max()), gmax=float(z['gmax'].max()))
     NETS[k] = m
     print(f"{k:10s} N={n:3d} node={sel:3d} λmin(H⊥)={m['check']['lam_min']:.3f} fd={fd:.1e} " +
-          (f"barrier=+{m['barrier'] - m['F0']:.2f} gain={m['F0'] - m['FB']:+.2f}" if m['B'] else 'single basin'))
+          (f"barrier=+{m['barrier'] - m['F0']:.2f} gain={m['F0'] - m['FB']:+.2f}" if m['B'] else 'single basin') + f" NEI={m['ens']['nei']:.4f} M={m['ens']['M']}")
 
 HTML = r"""<!doctype html>
 <html lang="ko" data-krds-mode="light">
@@ -48,9 +55,10 @@ HTML = r"""<!doctype html>
   --viz-band-lo:var(--krds-color-light-primary-30);--viz-band-hi:var(--krds-color-light-primary-5);
   --viz-iso:var(--krds-color-light-primary-60);
   --viz-edge:var(--krds-color-light-gray-90);--viz-node:var(--krds-color-light-secondary-70);--viz-node-ring:#fff;
-  --viz-ten:var(--krds-color-light-primary-50);--viz-com:var(--krds-color-light-danger-50);
+  --viz-ten:var(--krds-color-light-primary-50);--viz-com:var(--krds-color-light-point-50);
   --viz-up:var(--krds-color-light-warning-40);--viz-down:var(--krds-color-light-primary-70);--viz-sad:var(--krds-color-light-success-50);
   --viz-mark:var(--krds-color-light-gray-90);
+  --viz-r-lo:var(--krds-color-light-danger-40);--viz-r-mid:var(--krds-color-light-danger-10);--viz-r-hi:var(--krds-color-light-point-5);--viz-ens:var(--krds-color-light-danger-60);--viz-ens-lt:var(--krds-color-light-danger-30);
   --viz-s-lo:var(--krds-color-light-primary-40);--viz-s-mid:var(--krds-color-light-primary-10);--viz-s-hi:var(--krds-color-light-point-5);
 }
 [data-krds-mode="high-contrast"]{
@@ -58,9 +66,10 @@ HTML = r"""<!doctype html>
   --viz-band-lo:var(--krds-color-high-contrast-primary-50);--viz-band-hi:var(--krds-color-high-contrast-gray-95);
   --viz-iso:var(--krds-color-high-contrast-primary-30);
   --viz-edge:var(--krds-color-high-contrast-gray-0);--viz-node:var(--krds-color-high-contrast-gray-10);--viz-node-ring:#000;
-  --viz-ten:var(--krds-color-high-contrast-primary-30);--viz-com:var(--krds-color-high-contrast-danger-40);
+  --viz-ten:var(--krds-color-high-contrast-primary-30);--viz-com:var(--krds-color-high-contrast-point-30);
   --viz-up:var(--krds-color-high-contrast-warning-30);--viz-down:var(--krds-color-high-contrast-primary-20);--viz-sad:var(--krds-color-high-contrast-success-40);
   --viz-mark:var(--krds-color-high-contrast-gray-0);
+  --viz-r-lo:var(--krds-color-high-contrast-danger-50);--viz-r-mid:var(--krds-color-high-contrast-danger-20);--viz-r-hi:var(--krds-color-high-contrast-point-5);--viz-ens:var(--krds-color-high-contrast-danger-30);--viz-ens-lt:var(--krds-color-high-contrast-danger-20);
   --viz-s-lo:var(--krds-color-high-contrast-primary-50);--viz-s-mid:var(--krds-color-high-contrast-primary-20);--viz-s-hi:var(--krds-color-high-contrast-point-5);
 }
 *{box-sizing:border-box}
@@ -147,7 +156,7 @@ thead th{border-top:2px solid var(--gk-text);background:var(--gk-surface-seconda
 .layer[hidden]{display:none}
 .layers canvas{cursor:crosshair}
 .split .viz{grid-template-columns:1fr}
-.split .layers{aspect-ratio:auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1.2rem;border:0;overflow:visible;background:none}
+.split .layers{aspect-ratio:auto;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1.2rem;border:0;overflow:visible;background:none}
 .split .layer{position:relative;inset:auto}
 .split .layer canvas{aspect-ratio:1/1;height:auto;border:1px solid var(--gk-border);border-radius:var(--krds-radius-medium);background:var(--viz-bg)}
 .split .layer figcaption{display:block;font-size:1.4rem;margin-top:.6rem}
@@ -158,6 +167,14 @@ thead th{border-top:2px solid var(--gk-text);background:var(--gk-surface-seconda
 .cam label{display:inline-flex;gap:.6rem;align-items:center;min-height:4rem}
 .cam input[type=range]{width:10rem;accent-color:var(--gk-btn-primary)}
 .cam input[type=checkbox]{width:1.8rem;height:1.8rem;accent-color:var(--gk-btn-primary)}
+.twin{display:grid;grid-template-columns:minmax(0,1fr);gap:1.6rem}
+.twin>div{min-width:0}
+.twin .red{border-top:1px solid var(--gk-divider);padding-top:1.2rem}
+.twin h3{margin:0 0 .4rem;font-size:1.6rem}
+.blue h3{color:var(--viz-down)}.red h3{color:var(--viz-ens)}
+.red .katex{color:var(--viz-ens)}
+#surf2{width:100%;height:auto;display:block;border:1px solid var(--gk-border);border-radius:var(--krds-radius-large);background:var(--viz-bg);cursor:grab;touch-action:none;margin-top:1.2rem}
+#lamcloud{width:100%;max-width:56rem;height:auto;display:block;border:1px solid var(--gk-border);border-radius:var(--krds-radius-medium);background:var(--viz-bg)}
 .legend{display:flex;flex-wrap:wrap;gap:.4rem 1.6rem;font-size:1.4rem;color:var(--gk-text-subtle);margin-top:.8rem}
 .legend i{display:inline-block;width:2rem;height:.4rem;vertical-align:middle;margin-right:.6rem;border-radius:.2rem}
 /* live readout */
@@ -196,7 +213,7 @@ code{font-size:.9em;background:var(--gk-surface-secondary);padding:.1rem .4rem;b
 
 <div class="page">
 <nav class="toc" aria-label="본문 메뉴"><b>Contents</b>
-  <a href="#model">Model</a><a href="#viz">Slice viewer</a><a href="#decomp">$K$ and $S$</a><a href="#numbers">Numbers</a><a href="#scope">Scope</a>
+  <a href="#model">Model</a><a href="#viz">Slice viewer</a><a href="#nei">NEI ensemble</a><a href="#decomp">$K$ and $S$</a><a href="#numbers">Numbers</a><a href="#scope">Scope</a>
 </nav>
 <div class="c">
 
@@ -232,6 +249,7 @@ $$F_i(\mathbf x)=\sum_{j\ne i}\bigl(\lVert\mathbf x-\mathbf x_j\rVert-\delta_{ij
     <label><input type="checkbox" data-layer="L2" checked>spring stress</label>
     <label><input type="checkbox" data-layer="L3" checked>network</label>
     <label><input type="checkbox" data-layer="L4" checked>eigenvector</label>
+    <label><input type="checkbox" data-layer="L5" checked>NEI ensemble</label>
   </fieldset>
   <label>landscape 강조 <input type="range" id="gamma" min="0" max="100" value="30" aria-describedby="gamma-note"></label>
 </div>
@@ -244,6 +262,7 @@ $$F_i(\mathbf x)=\sum_{j\ne i}\bigl(\lVert\mathbf x-\mathbf x_j\rVert-\delta_{ij
       <figure class="layer" id="L2"><canvas width="1040" height="1040" aria-label="spring stress layer"></canvas><figcaption><b>② spring stress</b>선택 node 의 $N-1$ 개 spring</figcaption></figure>
       <figure class="layer" id="L3"><canvas width="1040" height="1040" aria-label="network layer"></canvas><figcaption><b>③ network</b>graph edge, node size ∝ √degree</figcaption></figure>
       <figure class="layer" id="L4"><canvas width="1040" height="1040" aria-label="eigenvector layer"></canvas><figcaption><b>④ eigenvector</b>$\mathbf H_{ii}$ 의 principal direction, 길이 ∝ $\lvert\lambda\rvert$</figcaption></figure>
+      <figure class="layer" id="L5"><canvas width="1040" height="1040" aria-label="NEI ensemble layer"></canvas><figcaption><b>⑤ NEI ensemble</b>$M$ 개 terminal 의 node $i$ 위치, $\langle F_i\rangle_M$ contour, $\langle\mathbf H_{ii}\rangle_M$ 의 eigenvector</figcaption></figure>
     </div>
     <div class="legend">
       <span><i style="background:var(--viz-edge)"></i>graph edge</span>
@@ -251,11 +270,14 @@ $$F_i(\mathbf x)=\sum_{j\ne i}\bigl(\lVert\mathbf x-\mathbf x_j\rVert-\delta_{ij
       <span><i style="background:var(--viz-com)"></i>compression $d\lt\delta$</span>
       <span><i style="background:var(--viz-up)"></i>$\lambda\gt0$</span>
       <span><i style="background:var(--viz-down)"></i>$\lambda\lt0$</span>
+      <span><i style="background:var(--viz-ens)"></i>NEI ensemble</span>
     </div>
   </div>
   <div>
     <div class="panel-t"><span>Landscape $F_i(\mathbf x)$</span> <div class="seg sm" role="group" aria-label="view"><button type="button" data-view="top" aria-pressed="false">top</button><button type="button" data-view="tilt" aria-pressed="true">tilt</button><button type="button" data-view="side" aria-pressed="false">side</button></div></div>
-    <canvas id="surf" width="1040" height="900" aria-label="3D landscape of F_i"></canvas>
+    <canvas id="surf" width="1040" height="760" aria-label="3D landscape of F_i, single terminal"></canvas>
+    <canvas id="surf2" width="1040" height="760" aria-label="3D landscape of the ensemble mean F_i"></canvas>
+    <p class="legend"><span><i style="background:var(--viz-s-lo)"></i>single terminal $F_i$</span><span><i style="background:var(--viz-r-lo)"></i>NEI ensemble $\langle F_i\rangle_M$</span><span class="hint" id="msinfo"></span></p>
     <div class="cam" role="group" aria-label="camera">
       <label>azimuth <input type="range" id="cam-az" min="-180" max="180" step="1"></label>
       <label>elevation <input type="range" id="cam-el" min="2" max="83" step="1"></label>
@@ -270,8 +292,10 @@ $$F_i(\mathbf x)=\sum_{j\ne i}\bigl(\lVert\mathbf x-\mathbf x_j\rVert-\delta_{ij
 </div>
 
 <div class="read" aria-live="polite">
-  <div id="mat"></div>
-  <div class="verdict"><span id="lam"></span><span id="verdict"></span></div>
+  <div class="twin">
+    <div class="blue"><h3>single terminal</h3><div id="mat"></div><div class="verdict"><span id="lam"></span><span id="verdict"></span></div></div>
+    <div class="red"><h3>NEI ensemble ($M$ terminals)</h3><div id="mat2"></div><div class="verdict"><span id="lam2"></span><span id="verdict2"></span></div></div>
+  </div>
   <div class="stat">
     <div>$F_i-F_i^{\rm term}$<b id="dF"></b></div>
     <div>tension pairs<b id="nT"></b></div>
@@ -279,6 +303,18 @@ $$F_i(\mathbf x)=\sum_{j\ne i}\bigl(\lVert\mathbf x-\mathbf x_j\rVert-\delta_{ij
     <div>$\lVert\nabla F_i\rVert$<b id="gN"></b></div>
   </div>
 </div>
+</section>
+
+<section id="nei">
+<h2>NEI ensemble</h2>
+<p>NEI 는 하나의 terminal 이 아니라 terminal 분포의 statistic 이다. 같은 graph 를 census protocol (initial condition $\mathrm{Uniform}[0,1]^{2N}$, seed $1000+m$ → SMACOF → L-BFGS) 로 $M=500$ 번 relax 하고, labeled pair distance 의 relative spread 를 평균한다.</p>
+$$\mathrm{NEI}=\frac{1}{\binom N2}\sum_{i<j}\frac{\operatorname{Var}_m\bigl(d_{ij}^{(m)}\bigr)}{\bigl\langle d_{ij}^{(m)}\bigr\rangle_m^{2}},\qquad m=1,\dots,M.$$
+<p>붉은 쪽의 Hessian 은 이 ensemble 위의 slice 다. terminal $m$ 을 기준 MDS terminal 에 orthogonal Procrustes (translation, rotation, reflection) 로 맞춘 좌표 $\tilde{\mathbf x}_j^{(m)}$ 로 다른 node 를 고정하고, slice energy 를 ensemble 평균한다.</p>
+$$\langle F_i\rangle_M(\mathbf x)=\frac1M\sum_{m=1}^{M}\sum_{j\ne i}\bigl(\lVert\mathbf x-\tilde{\mathbf x}_j^{(m)}\rVert-\delta_{ij}\bigr)^2,\qquad \langle\mathbf H_{ii}\rangle_M=\nabla\nabla^{\mathsf T}\langle F_i\rangle_M=\langle K\rangle_M+\langle S\rangle_M .$$
+<p>Hessian 은 선형이라 평균의 Hessian 이 Hessian 의 평균이다. $\operatorname{tr}\langle K\rangle_M=2(N-1)$ 은 그대로이므로, ensemble 이 바꾸는 것은 $\langle S\rangle_M$ 뿐이다. terminal 마다 다른 node 의 위치가 퍼질수록 (NEI 가 클수록) 한 terminal 의 날카로운 basin 과 dome 이 평균에서 흐려진다.</p>
+<p>$\langle F_i\rangle_M$ 은 Procrustes 기준 (gauge) 에 의존한다. gauge 와 무관한 비교로, 각 terminal 이 자기 위치에서 갖는 block $\mathbf H_{ii}^{(m)}\bigl(\mathbf x_i^{(m)}\bigr)$ 의 eigenvalue 분포를 아래에 함께 그린다 (rotation 에 불변).</p>
+<canvas id="lamcloud" width="1040" height="640" aria-label="eigenvalues of each terminal's own node block"></canvas>
+<p class="fine" id="lamcloud-note"></p>
 </section>
 
 <section id="decomp">
@@ -308,7 +344,8 @@ $$\operatorname{tr}\mathbf H_{ii}=2(N-1)+\sum_{j\ne i}\omega_{ij},\qquad \text{D
 <li><b>Data.</b> 모두 largest connected component, unweighted. Zachary karate club ($N=34$), Lusseau dolphins ($N=62$), Les Misérables co-appearance ($N=77$), college football ($N=115$), ca-netscience coauthorship ($N=352$).</li>
 <li><b>Terminal.</b> classical MDS → SMACOF → L-BFGS, random seed 없음. classical MDS 에서 겹치는 structurally equivalent node 는 $10^{-3}$ 크기의 golden-angle offset 으로 떼어 놓았다.</li>
 <li><b>Preset node.</b> 모든 node 의 slice 에서 terminal 이 아닌 basin (grid local minimum 을 BFGS 로 다듬고, minimax path 의 barrier 가 두 minimum 보다 0.05 이상 높은 것) 을 찾아 gain $F_i^{\rm term}-F_i^{\rm basin}$ 이 가장 큰 node 를 골랐다. gain $\gt0$ 이면 slice 안에 terminal 보다 낮은 basin 이 있다. college football 은 모든 slice 가 single basin 이라, $\lambda_1$ 이 가장 작은 (가장 soft 한) node 로 dome region 까지 다녀오는 curvature tour 를 보여 준다. 현상이 잘 보이는 node 를 고른 것이지 random sample 이 아니다.</li>
-<li><b>Reproduction.</b> <code>python build/make_nets.py</code>, <code>python build/build_page.py</code>, <code>node build/check_katex.cjs index.html</code> (math compile error 0).</li>
+<li><b>NEI ensemble.</b> 각 network 에서 census protocol 로 $M=500$ 개 terminal 을 만들고 (build/ensemble.py), 기준 MDS terminal 에 orthogonal Procrustes 로 맞췄다. 붉은 landscape 와 contour 는 계산량 때문에 처음 $M_s$ 개 terminal 로 그리고 ($M_s$ 는 그림 아래 표시), 붉은 Hessian readout 과 eigenvalue 분포는 $M$ 전체를 쓴다. $\langle F_i\rangle_M$ 과 그 Hessian 은 Procrustes gauge 에 의존하고, 자기 위치에서 잰 $\mathbf H_{ii}^{(m)}$ 의 eigenvalue 는 의존하지 않는다.</li>
+<li><b>Reproduction.</b> <code>python build/make_nets.py</code>, <code>python build/ensemble.py</code>, <code>python build/build_page.py</code>, <code>node build/check_katex.cjs index.html</code> (math compile error 0).</li>
 </ul>
 <h3>References</h3>
 <ol class="refs">
@@ -340,10 +377,10 @@ $$\operatorname{tr}\mathbf H_{ii}=2(N-1)+\sum_{j\ne i}\omega_{ij},\qquad \text{D
 const NETS = __NETS__;
 (function(){
 const $ = id => document.getElementById(id);
-const cvs = ['L1', 'L2', 'L3', 'L4'].map(id => $(id).querySelector('canvas'));
-const [c1, c2, c3, c4] = cvs.map(c => c.getContext('2d'));
+const cvs = ['L1', 'L2', 'L3', 'L4', 'L5'].map(id => $(id).querySelector('canvas'));
+const [c1, c2, c3, c4, c5] = cvs.map(c => c.getContext('2d'));
 const W = cvs[0].width;
-let NET, n, X, E, Draw, span, cx, cy, S, deg;
+let NET, n, X, E, Draw, span, cx, cy, S, deg, EX, M;
 const delta = (i, j) => Draw[i * n + j];
 const toC = (x, y) => [W / 2 + (x - cx) * S, W / 2 - (y - cy) * S];
 const fromC = (a, b) => [(a - W / 2) / S + cx, -(b - W / 2) / S + cy];
@@ -353,11 +390,33 @@ function setNet(key) {
   const lo = NET.lo, hi = NET.hi; span = Math.max(hi[0] - lo[0], hi[1] - lo[1]) * 1.04;
   cx = (lo[0] + hi[0]) / 2; cy = (lo[1] + hi[1]) / 2; S = W / span;
   deg = new Array(n).fill(0); for (const [a, b] of E) { deg[a]++; deg[b]++; }
+  // aligned ensemble terminals, int16 relative to the centre, (M, N, 2)
+  const en = NET.ens, raw = Uint8Array.from(atob(en.q), c => c.charCodeAt(0)), q = new Int16Array(raw.buffer);
+  M = en.M; EX = new Float32Array(q.length); for (let k = 0; k < q.length; k++) EX[k] = en.c[k & 1] + q[k] * en.s;
 }
+// mean over the first Ms terminals of the node-i slice and its block Hessian
+function eFi(p, i, Ms) { let f = 0; for (let m = 0; m < Ms; m++) { const o = m * n * 2; for (let j = 0; j < n; j++) { if (j === i) continue; const e = Math.hypot(p[0] - EX[o + 2 * j], p[1] - EX[o + 2 * j + 1]) - delta(i, j); f += e * e; } } return f / Ms; }
+function eHess(p, i) {
+  const K = [0, 0, 0], Sm = [0, 0, 0]; let f = 0;
+  for (let m = 0; m < M; m++) { const o = m * n * 2;
+    for (let j = 0; j < n; j++) { if (j === i) continue;
+      const dx = p[0] - EX[o + 2 * j], dy = p[1] - EX[o + 2 * j + 1], d = Math.hypot(dx, dy) || 1e-9, de = delta(i, j), ux = dx / d, uy = dy / d, w = 2 * (d - de) / d;
+      K[0] += 2 * ux * ux; K[1] += 2 * ux * uy; K[2] += 2 * uy * uy; Sm[0] += w * (1 - ux * ux); Sm[1] -= w * ux * uy; Sm[2] += w * (1 - uy * uy); f += (d - de) * (d - de); } }
+  for (const A of [K, Sm]) for (let k = 0; k < 3; k++) A[k] /= M;
+  const H = [K[0] + Sm[0], K[1] + Sm[1], K[2] + Sm[2]], [l1, l2] = eig(H);
+  const ev = l => { let vx = H[1], vy = l - H[0]; if (Math.hypot(vx, vy) < 1e-12) { vx = l - H[2]; vy = H[1]; } if (Math.hypot(vx, vy) < 1e-12) { vx = 1; vy = 0; } const r = Math.hypot(vx, vy); return [vx / r, vy / r]; };
+  return {H, K, S: Sm, l1, l2, v1: ev(l1), v2: ev(l2), f: f / M};
+}
+// each terminal's own block at its own node position (gauge free)
+function ownEigs(i) { const out = []; for (let m = 0; m < M; m++) { const o = m * n * 2, p = [EX[o + 2 * i], EX[o + 2 * i + 1]]; const H = [0, 0, 0];
+  for (let j = 0; j < n; j++) { if (j === i) continue; const dx = p[0] - EX[o + 2 * j], dy = p[1] - EX[o + 2 * j + 1], d = Math.hypot(dx, dy) || 1e-9, de = delta(i, j), ux = dx / d, uy = dy / d, w = 2 * (d - de) / d;
+    H[0] += 2 * ux * ux + w * (1 - ux * ux); H[1] += 2 * ux * uy - w * ux * uy; H[2] += 2 * uy * uy + w * (1 - uy * uy); }
+  out.push(eig(H)); } return out; }
+const budget = G => Math.max(10, Math.min(M, Math.floor(4e7 / ((n - 1) * G * G))));
 let C = {};
 const hex = s => { s = s.trim(); if (s[0] !== '#') return [128, 128, 128]; if (s.length === 4) s = '#' + [...s.slice(1)].map(c => c + c).join(''); return [1, 3, 5].map(k => parseInt(s.slice(k, k + 2), 16)); };
 const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
-function readColors() { const cs = getComputedStyle(document.documentElement); for (const k of ['bg', 'band-lo', 'band-hi', 'iso', 'edge', 'node', 'node-ring', 'ten', 'com', 'up', 'down', 'sad', 'mark', 's-lo', 's-mid', 's-hi']) C[k] = hex(cs.getPropertyValue('--viz-' + k)); }
+function readColors() { const cs = getComputedStyle(document.documentElement); for (const k of ['bg', 'band-lo', 'band-hi', 'iso', 'edge', 'node', 'node-ring', 'ten', 'com', 'up', 'down', 'sad', 'mark', 's-lo', 's-mid', 's-hi', 'r-lo', 'r-mid', 'r-hi', 'ens', 'ens-lt']) C[k] = hex(cs.getPropertyValue('--viz-' + k)); }
 let sel, pos, t = 0, playing = true, dragging = false, dirty = true;
 let gamma = 0.3, az = -0.75, el = 0.55; const cam = {zoom: 1, h: 1, spin: true};
 
@@ -409,28 +468,35 @@ function buildContour() {
     c1.stroke();
   });
 }
-// ── landscape window and surface heights ──
-function buildSurface() {
-  if (sel === NET.sel) win = {x0: NET.win[0], y0: NET.win[1], s: NET.win[2]};
-  else { const half = 0.2 * span; win = {x0: X[sel][0] - half, y0: X[sel][1] - half, s: 2 * half}; }
-  const G = 73, F = new Float64Array(G * G);
-  for (let a = 0; a < G; a++) for (let b = 0; b < G; b++) F[a * G + b] = Fi([win.x0 + win.s * b / (G - 1), win.y0 + win.s * a / (G - 1)], sel);
-  // linear height saturates smoothly, 1 - exp(-(F - min)/ℓ), with ℓ = 2 × (barrier - min) for the preset node and the window median otherwise
-  const srt = Array.from(F).sort((p, q) => p - q), mn = srt[0], ell = sel === NET.sel && NET.B ? 2 * (NET.barrier - mn) : srt[Math.floor(0.5 * (srt.length - 1))] - mn;
+// ── landscape window and surface heights (blue: single terminal, red: ensemble mean) ──
+let surf2 = null, MsS = 0, MsC = 0;
+function makeSurf(F, G, ell0) {
+  const srt = Array.from(F).sort((p, q) => p - q), mn = srt[0], ell = ell0 ? ell0(mn) : srt[Math.floor(0.5 * (srt.length - 1))] - mn;
   const rank = v => { let l = 0, r = srt.length - 1; while (l < r) { const m = (l + r) >> 1; if (srt[m] < v) l = m + 1; else r = m; } return l / (srt.length - 1); };
   const lin = new Float64Array(G * G), rk = new Float64Array(G * G);
   for (let k = 0; k < G * G; k++) { lin[k] = 1 - Math.exp(-(F[k] - mn) / ell); rk[k] = rank(F[k]); }
-  surf = {G, F, lin, rk, Z: new Float64Array(G * G)};
+  return {G, F, lin, rk, Z: new Float64Array(G * G)};
+}
+function buildSurface() {
+  if (sel === NET.sel) win = {x0: NET.win[0], y0: NET.win[1], s: NET.win[2]};
+  else { const half = 0.2 * span; win = {x0: X[sel][0] - half, y0: X[sel][1] - half, s: 2 * half}; }
+  const G = 61, F = new Float64Array(G * G), G2 = 49, F2 = new Float64Array(G2 * G2);
+  for (let a = 0; a < G; a++) for (let b = 0; b < G; b++) F[a * G + b] = Fi([win.x0 + win.s * b / (G - 1), win.y0 + win.s * a / (G - 1)], sel);
+  MsS = budget(G2);
+  for (let a = 0; a < G2; a++) for (let b = 0; b < G2; b++) F2[a * G2 + b] = eFi([win.x0 + win.s * b / (G2 - 1), win.y0 + win.s * a / (G2 - 1)], sel, MsS);
+  // linear height saturates smoothly, 1 - exp(-(F - min)/ℓ), with ℓ = 2 × (barrier - min) for the preset node and the window median otherwise
+  surf = makeSurf(F, G, sel === NET.sel && NET.B ? mn => 2 * (NET.barrier - mn) : null);
+  surf2 = makeSurf(F2, G2, null);
   setGamma(gamma);
 }
-function setGamma(gm) { gamma = gm; if (!surf) return; const {lin, rk, Z} = surf; for (let k = 0; k < Z.length; k++) Z[k] = (1 - gm) * lin[k] + gm * Math.pow(rk[k], 1.35); dirty = true; }
-function zAtXY(x, y) { const {G, Z} = surf; const b = (x - win.x0) / win.s * (G - 1), a = (y - win.y0) / win.s * (G - 1);
+function setGamma(gm) { gamma = gm; for (const sf of [surf, surf2]) { if (!sf) continue; const {lin, rk, Z} = sf; for (let k = 0; k < Z.length; k++) Z[k] = (1 - gm) * lin[k] + gm * Math.pow(rk[k], 1.35); } dirty = true; }
+function zAtXY(sf, x, y) { const {G, Z} = sf; const b = (x - win.x0) / win.s * (G - 1), a = (y - win.y0) / win.s * (G - 1);
   if (a < 0 || b < 0 || a > G - 1 || b > G - 1) return null; const i0 = Math.min(G - 2, Math.floor(a)), j0 = Math.min(G - 2, Math.floor(b)), fy = a - i0, fx = b - j0;
   return Z[i0 * G + j0] * (1 - fx) * (1 - fy) + Z[i0 * G + j0 + 1] * fx * (1 - fy) + Z[(i0 + 1) * G + j0] * (1 - fx) * fy + Z[(i0 + 1) * G + j0 + 1] * fx * fy; }
 
-const sv = $('surf'), sx = sv.getContext('2d');
-function drawSurf(cls) {
-  const Wv = sv.width, Hv = sv.height, {G, Z} = surf; sx.clearRect(0, 0, Wv, Hv);
+const sv = $('surf'), sv2 = $('surf2');
+function drawSurf(cv, sf, pre, cls, single) {
+  const sx = cv.getContext('2d'), Wv = cv.width, Hv = cv.height, {G, Z} = sf; sx.clearRect(0, 0, Wv, Hv);
   const ca = Math.cos(az), sa = Math.sin(az), ce = Math.cos(el), se = Math.sin(el);
   // fit the rotated unit box (|x|,|y| ≤ 1/√2, 0 ≤ z ≤ 1) into the canvas for every azimuth
   let sc = Wv * 0.62, zs = Hv * 0.58 * cam.h; const k = Math.min(1, 0.9 * Wv / (1.414 * sc), 0.9 * Hv / (1.414 * se * sc + zs * ce)); sc *= k * cam.zoom; zs *= k * cam.zoom;
@@ -441,7 +507,7 @@ function drawSurf(cls) {
   for (let a = 0; a < G - 1; a++) for (let b = 0; b < G - 1; b++) { const k = a * G + b; quads.push([k, pts[k][2] + pts[k + G + 1][2]]); }
   quads.sort((p, q) => q[1] - p[1]);
   const lx = -0.5, ly = 0.45, lz = 0.74, du = 1 / (G - 1);
-  const ramp = z => { const A = C['s-lo'], M = C['s-mid'], B = C['s-hi']; return z < 0.5 ? A.map((c, m) => c + (M[m] - c) * z * 2) : M.map((c, m) => c + (B[m] - c) * (z - 0.5) * 2); };
+  const ramp = z => { const A = C[pre + '-lo'], M = C[pre + '-mid'], B = C[pre + '-hi']; return z < 0.5 ? A.map((c, m) => c + (M[m] - c) * z * 2) : M.map((c, m) => c + (B[m] - c) * (z - 0.5) * 2); };
   for (const [k] of quads) {
     const z00 = Z[k], z10 = Z[k + 1], z01 = Z[k + G], z11 = Z[k + G + 1];
     const gx = (z10 + z11 - z00 - z01) / 2 / du * 0.62 * (zs / sc), gy = (z01 + z11 - z00 - z10) / 2 / du * 0.62 * (zs / sc);
@@ -452,19 +518,19 @@ function drawSurf(cls) {
     sx.beginPath(); sx.moveTo(q[0][0], q[0][1]); for (let m = 1; m < 4; m++) sx.lineTo(q[m][0], q[m][1]); sx.closePath(); sx.fill(); sx.stroke();
   }
   // grid lines for depth cue
-  sx.strokeStyle = rgba(C.iso, 0.28); sx.lineWidth = 1.2;
+  sx.strokeStyle = rgba(pre === 's' ? C.iso : C.ens, 0.28); sx.lineWidth = 1.2;
   for (let a = 0; a < G; a += 6) { sx.beginPath(); for (let b = 0; b < G; b++) { const p = pts[a * G + b]; b ? sx.lineTo(p[0], p[1]) : sx.moveTo(p[0], p[1]); } sx.stroke(); }
   for (let b = 0; b < G; b += 6) { sx.beginPath(); for (let a = 0; a < G; a++) { const p = pts[a * G + b]; a ? sx.lineTo(p[0], p[1]) : sx.moveTo(p[0], p[1]); } sx.stroke(); }
-  const proj = p => { const z = zAtXY(p[0], p[1]); return z === null ? null : P3((p[0] - win.x0) / win.s, (p[1] - win.y0) / win.s, z); };
+  const proj = p => { const z = zAtXY(sf, p[0], p[1]); return z === null ? null : P3((p[0] - win.x0) / win.s, (p[1] - win.y0) / win.s, z); };
   // curvature patch around the moving point
-  const cc = cls === 'bowl' ? C.up : cls === 'dome' ? C.down : C.sad, r = 0.06 * win.s;
+  const cc = single ? (cls === 'bowl' ? C.up : cls === 'dome' ? C.down : C.sad) : C.ens, r = 0.06 * win.s;
   sx.strokeStyle = rgba(cc, 1); sx.fillStyle = rgba(cc, 0.45); sx.lineWidth = 4; sx.beginPath();
   for (let k = 0; k <= 40; k++) { const th = k / 40 * 2 * Math.PI, p = proj([pos[0] + r * Math.cos(th), pos[1] + r * Math.sin(th)]); if (p) k ? sx.lineTo(p[0], p[1] - 3) : sx.moveTo(p[0], p[1] - 3); }
   sx.closePath(); sx.fill(); sx.stroke();
   sx.font = '700 28px "Noto Sans KR",sans-serif'; sx.textBaseline = 'bottom';
-  const label = (p, txt) => { const q = proj(p); if (!q) return; sx.strokeStyle = rgba(C.mark, 0.9); sx.lineWidth = 2; sx.beginPath(); sx.moveTo(q[0], q[1]); sx.lineTo(q[0], q[1] - 46); sx.stroke(); sx.fillStyle = rgba(C.mark, 1); sx.beginPath(); sx.arc(q[0], q[1], 5, 0, 7); sx.fill();
-    const tw = sx.measureText(txt).width; sx.fillStyle = rgba(C.bg, 0.92); sx.fillRect(q[0] + 2, q[1] - 84, tw + 16, 38); sx.fillStyle = rgba(C.mark, 1); sx.fillText(txt, q[0] + 10, q[1] - 50); };
-  label(X[sel], 'terminal'); if (sel === NET.sel && NET.B) { label(NET.saddle, 'barrier'); label(NET.B, NET.F0 > NET.FB ? 'lower basin' : 'second basin'); }
+  const label = (p, txt, hgt = 46) => { const q = proj(p); if (!q) return; sx.strokeStyle = rgba(C.mark, 0.9); sx.lineWidth = 2; sx.beginPath(); sx.moveTo(q[0], q[1]); sx.lineTo(q[0], q[1] - hgt); sx.stroke(); sx.fillStyle = rgba(C.mark, 1); sx.beginPath(); sx.arc(q[0], q[1], 5, 0, 7); sx.fill();
+    const tw = sx.measureText(txt).width; sx.fillStyle = rgba(C.bg, 0.92); sx.fillRect(q[0] + 2, q[1] - hgt - 38, tw + 16, 38); sx.fillStyle = rgba(C.mark, 1); sx.fillText(txt, q[0] + 10, q[1] - hgt - 4); };
+  label(X[sel], single ? 'terminal' : 'reference terminal'); if (single && sel === NET.sel && NET.B) { label(NET.saddle, 'barrier', 96); label(NET.B, NET.F0 > NET.FB ? 'lower basin' : 'second basin', 146); }
   const q = proj(pos); if (q) { sx.fillStyle = rgba(C.mark, 1); sx.beginPath(); sx.arc(q[0], q[1] - 3, 11, 0, 7); sx.fill(); sx.strokeStyle = rgba(C.bg, 1); sx.lineWidth = 3; sx.stroke(); }
 }
 
@@ -490,13 +556,61 @@ function arrow(c, x1, y1, x2, y2, col) {
   const an = Math.atan2(y2 - y1, x2 - x1), s = 20; c.beginPath(); c.moveTo(x2 + 6 * Math.cos(an), y2 + 6 * Math.sin(an));
   c.lineTo(x2 - s * Math.cos(an - 0.5), y2 - s * Math.sin(an - 0.5)); c.lineTo(x2 - s * Math.cos(an + 0.5), y2 - s * Math.sin(an + 0.5)); c.closePath(); c.fill();
 }
+let ensImg = null;
+function buildEnsLayer() {
+  // static part: ensemble-mean contour lines over the map and the M aligned positions of node i
+  MsC = budget(61); const G = 61, L = new Float64Array(G * G); let mn = Infinity;
+  for (let a = 0; a < G; a++) for (let b = 0; b < G; b++) { const v = eFi([cx - span / 2 + span * b / (G - 1), cy - span / 2 + span * a / (G - 1)], sel, MsC); L[a * G + b] = v; mn = Math.min(mn, v); }
+  let mx = -Infinity; for (let k = 0; k < G * G; k++) { L[k] = Math.log(L[k] - mn + 1); mx = Math.max(mx, L[k]); }
+  const srt = Array.from(L).sort((p, q) => p - q), qs = []; for (let k = 1; k < 16; k++) qs.push(srt[Math.floor(k / 16 * (srt.length - 1))]);
+  const off = document.createElement('canvas'); off.width = off.height = W; const o = off.getContext('2d'), cell = span / (G - 1);
+  qs.forEach((lev, li) => { o.strokeStyle = rgba(C.ens, li < 5 ? 0.9 : 0.5); o.lineWidth = li < 5 ? 2.4 : 1.4; o.setLineDash(li < 5 ? [] : [8, 6]); o.beginPath();
+    for (let a = 0; a < G - 1; a++) for (let b = 0; b < G - 1; b++) {
+      const v = [L[a * G + b], L[a * G + b + 1], L[(a + 1) * G + b + 1], L[(a + 1) * G + b]], P = [[b, a], [b + 1, a], [b + 1, a + 1], [b, a + 1]], pts = [];
+      for (let e = 0; e < 4; e++) { const u = v[e], w = v[(e + 1) % 4]; if ((u - lev) * (w - lev) < 0) { const tt = (lev - u) / (w - u); pts.push([P[e][0] + tt * (P[(e + 1) % 4][0] - P[e][0]), P[e][1] + tt * (P[(e + 1) % 4][1] - P[e][1])]); } }
+      for (let k = 0; k + 1 < pts.length; k += 2) { const A = toC(cx - span / 2 + pts[k][0] * cell, cy - span / 2 + pts[k][1] * cell), B = toC(cx - span / 2 + pts[k + 1][0] * cell, cy - span / 2 + pts[k + 1][1] * cell); o.moveTo(A[0], A[1]); o.lineTo(B[0], B[1]); } }
+    o.stroke(); });
+  o.setLineDash([]); o.fillStyle = rgba(C.ens, Math.min(0.6, 30 / M + 0.12));
+  for (let m = 0; m < M; m++) { const o2 = m * n * 2 + 2 * sel, [a, b] = toC(EX[o2], EX[o2 + 1]); o.beginPath(); o.arc(a, b, 5, 0, 7); o.fill(); }
+  ensImg = off;
+}
+function drawEns(he) {
+  c5.clearRect(0, 0, W, W); if (ensImg) c5.drawImage(ensImg, 0, 0);
+  const [a, b] = toC(...pos), lm = Math.max(Math.abs(he.l1), Math.abs(he.l2)) || 1;
+  for (const [l, v] of [[he.l1, he.v1], [he.l2, he.v2]]) { const L = 34 + 76 * Math.abs(l) / lm; for (const sg of [1, -1]) arrow(c5, a, b, a + sg * v[0] * L, b - sg * v[1] * L, l > 0 ? C.ens : C['ens-lt']); }
+}
+let own = [];
+function drawLamCloud() {
+  const cv = $('lamcloud'), x = cv.getContext('2d'), Wc = cv.width, Hc = cv.height, pad = 90; x.clearRect(0, 0, Wc, Hc);
+  const h0 = hess(X[sel], sel), all = own.concat([[h0.l1, h0.l2]]);
+  const L1 = all.map(e => e[0]), L2 = all.map(e => e[1]);
+  let x0 = Math.min(0, ...L1), x1 = Math.max(0, ...L1), y0 = Math.min(0, ...L2), y1 = Math.max(0, ...L2);
+  const px = 0.08 * (x1 - x0 || 1), py = 0.08 * (y1 - y0 || 1); x0 -= px; x1 += px; y0 -= py; y1 += py;
+  const tx = v => pad + (v - x0) / (x1 - x0) * (Wc - 1.4 * pad), ty = v => Hc - pad - (v - y0) / (y1 - y0) * (Hc - 1.6 * pad);
+  x.save(); x.beginPath(); x.rect(tx(x0), ty(y1), tx(x1) - tx(x0), ty(y0) - ty(y1)); x.clip();
+  x.fillStyle = rgba(C.up, 0.08); x.fillRect(tx(0), ty(y1), tx(x1) - tx(0), ty(y0) - ty(y1));
+  x.strokeStyle = rgba(C.mark, 0.55); x.lineWidth = 2; x.beginPath(); x.moveTo(tx(x0), ty(0)); x.lineTo(tx(x1), ty(0)); x.moveTo(tx(0), ty(y0)); x.lineTo(tx(0), ty(y1)); x.stroke();
+  x.setLineDash([6, 6]); x.beginPath(); const d0 = Math.max(x0, y0), d1 = Math.min(x1, y1); x.moveTo(tx(d0), ty(d0)); x.lineTo(tx(d1), ty(d1)); x.stroke(); x.setLineDash([]);
+  x.fillStyle = rgba(C.ens, Math.min(0.7, 40 / M + 0.15)); for (const [l1, l2] of own) { x.beginPath(); x.arc(tx(l1), ty(l2), 6, 0, 7); x.fill(); }
+  x.fillStyle = rgba(C.down, 1); x.strokeStyle = rgba(C.bg, 1); x.lineWidth = 3; x.beginPath(); x.arc(tx(h0.l1), ty(h0.l2), 12, 0, 7); x.fill(); x.stroke();
+  x.restore();
+  x.strokeStyle = rgba(C.mark, 0.4); x.lineWidth = 1.5; x.strokeRect(tx(x0), ty(y1), tx(x1) - tx(x0), ty(y0) - ty(y1));
+  x.fillStyle = rgba(C.mark, 1); x.font = '500 22px "Noto Sans KR",sans-serif'; x.textAlign = 'center';
+  for (const v of [x0 + px, 0, x1 - px]) x.fillText(v.toFixed(Math.abs(v) < 10 ? 1 : 0), tx(v), ty(y0) + 30);
+  x.textAlign = 'right'; for (const v of [y0 + py, 0, y1 - py]) x.fillText(v.toFixed(Math.abs(v) < 10 ? 1 : 0), tx(x0) - 10, ty(v) + 8);
+  x.font = '600 26px "Noto Sans KR",sans-serif'; x.textAlign = 'center'; x.fillText('λ₁', tx((x0 + x1) / 2), Hc - 14);
+  x.save(); x.translate(26, ty((y0 + y1) / 2)); x.rotate(-Math.PI / 2); x.fillText('λ₂', 0, 0); x.restore(); x.textAlign = 'left';
+  x.fillText('BOWL (λ₁ > 0)', Math.max(tx(0), tx(x0)) + 12, ty(y1) + 34); if (tx(0) - tx(x0) > 170) x.fillText('λ₁ < 0', tx(x0) + 12, ty(y1) + 34);
+  const bowl = own.filter(e => e[0] > 0).length, med = v => v.slice().sort((p, q) => p - q)[v.length >> 1];
+  setMath('lamcloud-note', `붉은 점: ${M} 개 terminal 각각에서 node ${sel} 의 block $\\mathbf H_{ii}^{(m)}$ 을 자기 위치 $\\mathbf x_i^{(m)}$ 에서 잰 eigenvalue $(\\lambda_1,\\lambda_2)$. 푸른 점: 기준 MDS terminal. BOWL 비율 ${(100 * bowl / M).toFixed(1)}%, median $\\lambda_1=${med(own.map(e => e[0])).toFixed(2)}$, median $\\lambda_2=${med(own.map(e => e[1])).toFixed(2)}$.`);
+}
 function drawVectors(h) {
   c4.clearRect(0, 0, W, W);
   const [w0, w1] = toC(win.x0, win.y0 + win.s), [w2, w3] = toC(win.x0 + win.s, win.y0);
   c4.setLineDash([10, 8]); c4.strokeStyle = rgba(C.mark, 0.7); c4.lineWidth = 2; c4.strokeRect(w0, w1, w2 - w0, w3 - w1); c4.setLineDash([]);
-  const ring = (p, txt, dash) => { const [a, b] = toC(...p); c4.strokeStyle = rgba(C.mark, 1); c4.lineWidth = 2.5; c4.setLineDash(dash ? [6, 6] : []); c4.beginPath(); c4.arc(a, b, 18, 0, 7); c4.stroke(); c4.setLineDash([]);
-    c4.font = '700 24px "Noto Sans KR",sans-serif'; c4.lineWidth = 6; c4.strokeStyle = rgba(C.bg, 0.9); c4.strokeText(txt, a + 22, b - 14); c4.fillStyle = rgba(C.mark, 1); c4.fillText(txt, a + 22, b - 14); };
-  ring(X[sel], 'terminal', false); if (sel === NET.sel && NET.B) { ring(NET.saddle, 'barrier', true); ring(NET.B, NET.F0 > NET.FB ? 'lower basin' : 'second basin', true); }
+  const ring = (p, txt, dash, dy = -14) => { const [a, b] = toC(...p); c4.strokeStyle = rgba(C.mark, 1); c4.lineWidth = 2.5; c4.setLineDash(dash ? [6, 6] : []); c4.beginPath(); c4.arc(a, b, 18, 0, 7); c4.stroke(); c4.setLineDash([]);
+    c4.font = '700 24px "Noto Sans KR",sans-serif'; c4.lineWidth = 6; c4.strokeStyle = rgba(C.bg, 0.9); c4.strokeText(txt, a + 22, b + dy); c4.fillStyle = rgba(C.mark, 1); c4.fillText(txt, a + 22, b + dy); };
+  ring(X[sel], 'terminal', false); if (sel === NET.sel && NET.B) { ring(NET.saddle, 'barrier', true, 44); ring(NET.B, NET.F0 > NET.FB ? 'lower basin' : 'second basin', true, -58); }
   const [a, b] = toC(...pos), lm = Math.max(Math.abs(h.l1), Math.abs(h.l2)) || 1;
   for (const [l, v] of [[h.l1, h.v1], [h.l2, h.v2]]) { const L = 34 + 76 * Math.abs(l) / lm, c = l > 0 ? C.up : C.down; for (const sg of [1, -1]) arrow(c4, a, b, a + sg * v[0] * L, b - sg * v[1] * L, c); }
   c4.fillStyle = rgba(C.mark, 1); c4.beginPath(); c4.arc(a, b, 11, 0, 7); c4.fill(); c4.strokeStyle = rgba(C.bg, 1); c4.lineWidth = 3; c4.stroke();
@@ -505,18 +619,22 @@ function drawVectors(h) {
 // ── live readout (KaTeX) ──
 const f2 = v => (Math.abs(v) >= 100 ? v.toFixed(0) : Math.abs(v) >= 10 ? v.toFixed(1) : v.toFixed(2));
 const bm = M => `\\begin{bmatrix}${f2(M[0])}&${f2(M[1])}\\\\${f2(M[1])}&${f2(M[2])}\\end{bmatrix}`;
-let lastTex = '';
-function readout(h, cls) {
+let lastTex = '', lastTex2 = '';
+function readout(h, cls, he) {
   const tex = `\\mathbf H_{ii}=\\underbrace{${bm(h.H)}}_{\\text{Hessian}}=\\underbrace{${bm(h.K)}}_{K\\,\\succeq\\,0}+\\underbrace{${bm(h.S)}}_{S}`;
   if (tex !== lastTex) { katex.render(tex, $('mat'), {displayMode: true, throwOnError: false}); lastTex = tex;
     katex.render(`\\lambda_1=${f2(h.l1)},\\quad \\lambda_2=${f2(h.l2)}`, $('lam'), {throwOnError: false}); }
+  const tex2 = `\\langle\\mathbf H_{ii}\\rangle_M=\\underbrace{${bm(he.H)}}_{\\text{Hessian}}=\\underbrace{${bm(he.K)}}_{\\langle K\\rangle}+\\underbrace{${bm(he.S)}}_{\\langle S\\rangle}`;
+  if (tex2 !== lastTex2) { katex.render(tex2, $('mat2'), {displayMode: true, throwOnError: false}); lastTex2 = tex2;
+    katex.render(`\\lambda_1=${f2(he.l1)},\\quad \\lambda_2=${f2(he.l2)}`, $('lam2'), {throwOnError: false}); }
+  const ce = he.l1 > 0 ? 'BOWL' : he.l2 < 0 ? 'DOME' : 'SADDLE'; $('verdict2').textContent = ce + ' — ensemble mean'; $('verdict2').style.color = 'var(--viz-ens)';
   const V = $('verdict'), col = cls === 'bowl' ? 'up' : cls === 'dome' ? 'down' : 'sad';
   V.textContent = cls === 'bowl' ? 'BOWL — 모든 direction 으로 positive curvature' : cls === 'dome' ? 'DOME — compression 이 stiffness 를 이긴다' : 'SADDLE — 한 direction 은 위, 다른 direction 은 아래';
   V.style.color = `var(--viz-${col})`;
   const dF = h.f - Fref; $('dF').textContent = (dF >= 0 ? '+' : '−') + Math.abs(dF).toFixed(1);
   $('nT').textContent = h.nt; $('nC').textContent = h.nc; $('gN').textContent = Math.hypot(...h.g).toFixed(2);
 }
-function rebuild() { Fref = Fi(X[sel], sel); buildContour(); buildSurface(); $('selinfo').textContent = `node ${sel} · degree ${deg[sel]}` + (sel === NET.sel ? ' · preset path' : ' · drag to move'); dirty = true; }
+function rebuild() { Fref = Fi(X[sel], sel); buildContour(); buildSurface(); buildEnsLayer(); own = ownEigs(sel); drawLamCloud(); $('msinfo').textContent = `red grids: first ${MsS} (landscape) / ${MsC} (contour) of M = ${M} terminals; red readout uses all ${M}`; $('selinfo').textContent = `node ${sel} · degree ${deg[sel]}` + (sel === NET.sel ? ' · preset path' : ' · drag to move'); dirty = true; }
 let lastPos = '';
 function frame() {
   if (playing && !dragging && sel === NET.sel) { t = (t + 1) % NET.anim.length; pos = NET.anim[t].slice(); }
@@ -526,7 +644,8 @@ function frame() {
   const key = pos.join() + sel;
   if (key !== lastPos || dirty) {
     const h = hess(pos, sel), cls = h.l1 > 0 ? 'bowl' : h.l2 < 0 ? 'dome' : 'saddle';
-    drawSprings(); drawNetwork(); drawVectors(h); drawSurf(cls); readout(h, cls); lastPos = key; dirty = false;
+    const he = eHess(pos, sel), ce = he.l1 > 0 ? 'bowl' : he.l2 < 0 ? 'dome' : 'saddle';
+    drawSprings(); drawNetwork(); drawVectors(h); drawEns(he); drawSurf(sv, surf, 's', cls, true); drawSurf(sv2, surf2, 'r', ce, false); readout(h, cls, he); lastPos = key; dirty = false;
   }
   requestAnimationFrame(frame);
 }
@@ -545,10 +664,13 @@ lay.addEventListener('pointermove', e => { if (dragging) pos = fromC(...evp(e));
 lay.addEventListener('pointerup', () => { dragging = false; });
 let rot = null;
 const touches = new Map(); let pinch = null;
-sv.addEventListener('pointerdown', e => { touches.set(e.pointerId, [e.clientX, e.clientY]); if (touches.size === 2) { const [p, q] = [...touches.values()]; pinch = [Math.hypot(p[0] - q[0], p[1] - q[1]), cam.zoom]; rot = null; return; } rot = [e.clientX, e.clientY, az, el]; sv.setPointerCapture(e.pointerId); sv.style.cursor = 'grabbing'; });
-sv.addEventListener('pointermove', e => { if (touches.has(e.pointerId)) touches.set(e.pointerId, [e.clientX, e.clientY]); if (pinch && touches.size === 2) { const [p, q] = [...touches.values()]; cam.zoom = Math.max(0.6, Math.min(3, pinch[1] * Math.hypot(p[0] - q[0], p[1] - q[1]) / pinch[0])); $('cam-zoom').value = cam.zoom * 100; dirty = true; return; } if (!rot) return; az = rot[2] + (e.clientX - rot[0]) * 0.01; el = Math.max(0.03, Math.min(1.45, rot[3] + (e.clientY - rot[1]) * 0.006)); elT = null; cam.spin = false; $('cam-spin').checked = false; viewBtn(null); dirty = true; });
-const up = e => { touches.delete(e.pointerId); if (touches.size < 2) pinch = null; rot = null; sv.style.cursor = 'grab'; };
-sv.addEventListener('pointerup', up); sv.addEventListener('pointercancel', up);
+for (const cv of [sv, sv2]) {
+cv.addEventListener('pointerdown', e => { touches.set(e.pointerId, [e.clientX, e.clientY]); if (touches.size === 2) { const [p, q] = [...touches.values()]; pinch = [Math.hypot(p[0] - q[0], p[1] - q[1]), cam.zoom]; rot = null; return; } rot = [e.clientX, e.clientY, az, el]; cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing'; });
+cv.addEventListener('pointermove', e => { if (touches.has(e.pointerId)) touches.set(e.pointerId, [e.clientX, e.clientY]); if (pinch && touches.size === 2) { const [p, q] = [...touches.values()]; cam.zoom = Math.max(0.6, Math.min(3, pinch[1] * Math.hypot(p[0] - q[0], p[1] - q[1]) / pinch[0])); $('cam-zoom').value = cam.zoom * 100; dirty = true; return; } if (!rot) return; az = rot[2] + (e.clientX - rot[0]) * 0.01; el = Math.max(0.03, Math.min(1.45, rot[3] + (e.clientY - rot[1]) * 0.006)); elT = null; cam.spin = false; $('cam-spin').checked = false; viewBtn(null); dirty = true; });
+const up = e => { touches.delete(e.pointerId); if (touches.size < 2) pinch = null; rot = null; cv.style.cursor = 'grab'; };
+cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+cv.addEventListener('wheel', e => { e.preventDefault(); cam.zoom = Math.max(0.6, Math.min(3, cam.zoom * Math.exp(-e.deltaY * 0.0015))); $('cam-zoom').value = cam.zoom * 100; dirty = true; }, {passive: false});
+}
 // camera controls; sliders follow drags and presets
 const deg2 = r => Math.round(r * 180 / Math.PI);
 function syncCam() { const A = $('cam-az'), L = $('cam-el'); if (document.activeElement !== A) A.value = ((deg2(az) + 540) % 360) - 180; if (document.activeElement !== L) L.value = deg2(el); }
@@ -558,7 +680,6 @@ $('cam-zoom').oninput = e => { cam.zoom = e.target.value / 100; dirty = true; };
 $('cam-h').oninput = e => { cam.h = e.target.value / 100; dirty = true; };
 $('cam-spin').onchange = e => { cam.spin = e.target.checked; };
 $('cam-reset').onclick = () => { az = -0.75; elT = 0.55; cam.zoom = 1; cam.h = 1; $('cam-zoom').value = 100; $('cam-h').value = 100; viewBtn('tilt'); dirty = true; };
-sv.addEventListener('wheel', e => { e.preventDefault(); cam.zoom = Math.max(0.6, Math.min(3, cam.zoom * Math.exp(-e.deltaY * 0.0015))); $('cam-zoom').value = cam.zoom * 100; dirty = true; }, {passive: false});
 // view presets: el = 0.03 is almost edge-on, so the profile of F_i along the viewing axis shows
 let elT = null; const VIEW = {top: 1.45, tilt: 0.55, side: 0.03};
 const viewBtn = v => document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', b.dataset.view === v));
@@ -570,7 +691,7 @@ $('gamma').oninput = e => setGamma(e.target.value / 100);
 document.querySelectorAll('[data-layer]').forEach(cb => cb.onchange = () => { $(cb.dataset.layer).hidden = !cb.checked; });
 const seg = split => { document.body.classList.toggle('split', split); $('stack').setAttribute('aria-pressed', !split); $('split').setAttribute('aria-pressed', split); };
 $('stack').onclick = () => seg(false); $('split').onclick = () => seg(true);
-$('mode').onclick = () => { const hc = document.documentElement.dataset.krdsMode !== 'high-contrast'; document.documentElement.dataset.krdsMode = hc ? 'high-contrast' : 'light'; $('mode').setAttribute('aria-pressed', hc); $('mode').textContent = hc ? '기본 화면' : '선명한 화면'; readColors(); buildContour(); dirty = true; };
+$('mode').onclick = () => { const hc = document.documentElement.dataset.krdsMode !== 'high-contrast'; document.documentElement.dataset.krdsMode = hc ? 'high-contrast' : 'light'; $('mode').setAttribute('aria-pressed', hc); $('mode').textContent = hc ? '기본 화면' : '선명한 화면'; readColors(); buildContour(); buildEnsLayer(); drawLamCloud(); dirty = true; };
 
 // ── per-network text; every math string goes through setMath (build/check_katex.cjs compiles them) ──
 const MATH = {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}], ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'option', 'canvas'], throwOnError: false};
@@ -581,12 +702,12 @@ function describe() {
   const two = NET.B !== null, bar = two ? (NET.barrier - NET.F0).toFixed(2) : '', gain = two ? NET.F0 - NET.FB : 0, gs = Math.abs(gain).toFixed(2);
   const basinName = gain > 0 ? 'lower basin' : 'second basin', domeStep = NET.dome ? ' → dome region' : '';
   const sliceKey = two ? `<div><dt>node ${NET.sel} slice: barrier / gain</dt><dd>$+${bar}$ / $${gain > 0 ? '+' : '-'}${gs}$</dd></div>` : `<div><dt>node ${NET.sel} slice</dt><dd>single basin</dd></div>`;
-  setMath('keys', `<div><dt>network</dt><dd>${NET.name}</dd></div><div><dt>size</dt><dd>$N=${n},\\ E=${E.length}$</dd></div><div><dt>constraints vs DOF</dt><dd>$${npair}$ vs $${2 * n - 3}$</dd></div><div><dt>compressed pairs</dt><dd>${(100 * ck.frac_comp).toFixed(1)}%</dd></div><div><dt>$\\lambda_{\\min}(\\mathbf H_\\perp)$</dt><dd>$${ck.lam_min.toFixed(2)}$</dd></div>${sliceKey}`);
+  setMath('keys', `<div><dt>network</dt><dd>${NET.name}</dd></div><div><dt>size</dt><dd>$N=${n},\\ E=${E.length}$</dd></div><div><dt>constraints vs DOF</dt><dd>$${npair}$ vs $${2 * n - 3}$</dd></div><div><dt>NEI ($M=${M}$)</dt><dd>$${NET.ens.nei.toFixed(4)}$</dd></div><div><dt>compressed pairs</dt><dd>${(100 * ck.frac_comp).toFixed(1)}%</dd></div><div><dt>$\\lambda_{\\min}(\\mathbf H_\\perp)$</dt><dd>$${ck.lam_min.toFixed(2)}$</dd></div>${sliceKey}`);
   const tour = two ? `자동 경로: terminal → barrier → ${basinName}${domeStep} → terminal.` : `모든 node 의 slice 가 single basin 이라 자동 경로는 curvature tour: terminal${domeStep} → terminal.`;
   setMath('vizlead', `${NET.name} ($N=${n}$) 의 MDS terminal 에서 node ${NET.sel} (degree ${deg[NET.sel]}) 만 움직인다. ${tour}`);
   const slice = two ? `node ${NET.sel} 하나만 옮기면 barrier ($+${bar}$) 너머에 $F$ 가 terminal 보다 $${gs}$ 만큼 ${gain > 0 ? '낮은 lower basin 이 있다. terminal 은 full space 에서 local minimum 이지만 (아래 표), 한 node 의 slice 만으로도 더 낮은 basin 이 보인다.' : '높은 second basin 이 있다. 이 slice 에서는 terminal 이 더 깊은 basin 이다.'}` : `이 network 의 MDS terminal 에서는 어느 node 의 slice 도 basin 이 하나뿐이다. 그래도 slice 안에는 compression 이 stiffness 를 이기는 dome region 이 있다.`;
   setMath('facts', `terminal 에서 node ${NET.sel} 의 block 은 $\\lambda_1=${h0.l1.toFixed(2)}$, $\\lambda_2=${h0.l2.toFixed(2)}$ 이다. 이 curvature 는 stiffness (eigenvalue $${eK[0].toFixed(1)},\\ ${eK[1].toFixed(1)}$, 합 $2(N-1)=${2 * (n - 1)}$) 와 prestress (eigenvalue $${eS[0].toFixed(1)},\\ ${eS[1].toFixed(1)}$) 의 합이다. 이 node 의 spring ${n - 1} 개 중 ${h0.nc} 개가 compression 이라 $\\sum_j\\omega_{ij}=${sumw.toFixed(1)}$ 이고, prestress 가 stiffness 의 약 ${Math.round(-sumw / (2 * (n - 1)) * 100)}% 를 상쇄한다. ${slice}`);
-  setMath('checks', `<tr><td>stress</td><td>$F=${ck.F.toFixed(2)}$</td></tr><tr><td>full $\\mathbf H$ 의 zero mode</td><td>${ck.n_zero} 개 = translation 2 + rotation 1</td></tr><tr><td>$\\lambda_{\\min}(\\mathbf H_\\perp)$</td><td>$${ck.lam_min.toFixed(3)}\\gt0$: terminal 은 $2N$ 차원 full space 에서 local minimum</td></tr><tr><td>$\\max_i\\lVert\\nabla_iF\\rVert$</td><td>$${sci(ck.grad)}$</td></tr><tr><td>analytic $\\mathbf H_{ii}$ vs finite difference</td><td>relative difference $${sci(ck.fd)}$</td></tr><tr><td>terminal</td><td>classical MDS → SMACOF → L-BFGS</td></tr>`);
+  setMath('checks', `<tr><td>stress</td><td>$F=${ck.F.toFixed(2)}$</td></tr><tr><td>full $\\mathbf H$ 의 zero mode</td><td>${ck.n_zero} 개 = translation 2 + rotation 1</td></tr><tr><td>$\\lambda_{\\min}(\\mathbf H_\\perp)$</td><td>$${ck.lam_min.toFixed(3)}\\gt0$: terminal 은 $2N$ 차원 full space 에서 local minimum</td></tr><tr><td>$\\max_i\\lVert\\nabla_iF\\rVert$</td><td>$${sci(ck.grad)}$</td></tr><tr><td>analytic $\\mathbf H_{ii}$ vs finite difference</td><td>relative difference $${sci(ck.fd)}$</td></tr><tr><td>terminal</td><td>classical MDS → SMACOF → L-BFGS</td></tr><tr><td>NEI ensemble</td><td>$M=${M}$ (census protocol), $\\mathrm{NEI}=${NET.ens.nei.toFixed(4)}$. terminal stress: min $${NET.ens.Fmin.toFixed(1)}$, median $${NET.ens.Fmed.toFixed(1)}$, max $${NET.ens.Fmax.toFixed(1)}$, $\\max\\lVert\\nabla F\\rVert=${sci(NET.ens.gmax)}$. 기준 MDS terminal 보다 stress 가 낮은 ensemble terminal: ${(100 * NET.ens.pct).toFixed(1)}%</td></tr>`);
 }
 function loadNet(key) {
   setNet(key); sel = NET.sel; pos = X[sel].slice(); t = 0; lastTex = '';
