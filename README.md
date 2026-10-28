@@ -5,14 +5,14 @@
 $$F(X)=\sum_{i<j}(d_{ij}-\delta_{ij})^2,\qquad \mathbf H_{ii}=\underbrace{2\sum_{j\ne i}\mathbf u_{ij}\mathbf u_{ij}^{\mathsf T}}_{K\succeq0}+\underbrace{\sum_{j\ne i}\omega_{ij}\bigl(\mathbf I-\mathbf u_{ij}\mathbf u_{ij}^{\mathsf T}\bigr)}_{S},\qquad \omega_{ij}=\frac{2(d_{ij}-\delta_{ij})}{d_{ij}}$$
 
 - $\delta_{ij}$ = unweighted hop distance, node position = metric MDS terminal (classical MDS → SMACOF → L-BFGS, deterministic).
-- $\operatorname{tr}K=2(N-1)$ 은 위치와 무관하므로 curvature type (BOWL / SADDLE / DOME) 을 정하는 것은 prestress $S$ 다.
+- $\operatorname{tr}K=2(N-1)$ 은 위치와 무관하므로 DOME 의 필요조건 $\sum_j\omega_{ij}<-2(N-1)$ 은 prestress $S$ 만으로 정해진다. SADDLE 은 $K$ 의 anisotropy 와 $S$ 가 함께 정한다.
 - network 5개: Zachary karate club, Lusseau dolphins, Les Misérables, college football, ca-netscience.
 - 각 terminal 에서 full Hessian 이 zero mode 3개 (translation 2 + rotation 1) 외에 모두 양수임을 확인했다.
 
 ## NEI ensemble (red)
 NEI 는 terminal 분포의 statistic 이다. 각 network 를 census protocol (Uniform[0,1] 시작, seed 1000+m → SMACOF → L-BFGS) 로 $M=500$ 번 relax 해서
 $\mathrm{NEI}=\langle\operatorname{Var}_m(d_{ij})/\langle d_{ij}\rangle_m^2\rangle_{i<j}$ 를 계산하고, terminal 들을 기준 MDS terminal 에 Procrustes 로 맞춘 뒤
-ensemble-mean slice $\langle F_i\rangle_M$ 와 그 Hessian $\langle\mathbf H_{ii}\rangle_M=\langle K\rangle_M+\langle S\rangle_M$ 을 붉은 계열로 그린다.
+ensemble-mean slice $\langle F_i\rangle_M$ 과 그 Hessian $\langle\mathbf H_{ii}\rangle_M=\langle K\rangle_M+\langle S\rangle_M$ 을 붉은 계열로 그린다.
 gauge 와 무관한 비교로 각 terminal 자기 위치의 $\mathbf H_{ii}^{(m)}$ eigenvalue 분포도 함께 그린다.
 
 | network | N | NEI (M=500) |

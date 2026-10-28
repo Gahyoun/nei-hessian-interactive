@@ -207,7 +207,7 @@ code{font-size:.9em;background:var(--gk-surface-secondary);padding:.1rem .4rem;b
 <div class="title">
   <p class="eyebrow">Interactive note · statistical physics · network embedding</p>
   <h1>The stress Hessian</h1>
-  <p class="lead">모든 쌍이 spring 인 network 에서 node 하나를 움직이면 curvature 는 어떻게 바뀌는가. Block Hessian $\mathbf H_{ii}$ 는 언제나 positive semidefinite 인 stiffness $K$ 와, 부호가 tension 으로 정해지는 prestress $S$ 의 합이다.</p>
+  <p class="lead">모든 node 쌍을 spring 으로 이은 network embedding 에서, node 하나를 움직일 때 energy 의 curvature 를 본다. node block Hessian $\mathbf H_{ii}$ 는 언제나 positive semidefinite 인 stiffness $K$ 와, 쌍마다 기여의 부호가 tension 의 부호로 정해지는 prestress $S$ 의 합으로 정확히 나뉜다.</p>
   <dl class="keys" id="keys" aria-label="Key numbers"></dl>
 </div>
 
@@ -221,12 +221,12 @@ code{font-size:.9em;background:var(--gk-surface-secondary);padding:.1rem .4rem;b
 <h2>Model</h2>
 <p>graph $G$ 의 node 를 평면에 embed 하고, 모든 쌍 $(i,j)$ 를 rest length $\delta_{ij}$ (unweighted shortest-path hop distance) 의 spring 으로 잇는다. energy 는 unweighted stress 다.</p>
 $$F(X)=\sum_{i<j}\bigl(d_{ij}-\delta_{ij}\bigr)^2,\qquad d_{ij}=\lVert\mathbf x_i-\mathbf x_j\rVert,\qquad X=(\mathbf x_1,\dots,\mathbf x_N)\in\mathbb R^{2N}.$$
-<p>node position 은 metric MDS 로 정한다. classical (Torgerson) MDS 를 initial condition 으로 두고 SMACOF (stress majorization) 와 L-BFGS 로 $F$ 를 줄여 멈춘 점이 <b>terminal</b>, 즉 stress 의 local minimum 이다. constraint $N(N-1)/2$ 개가 degree of freedom $2N-3$ 보다 훨씬 많은 overconstrained framework 라서, 어떤 terminal 에서도 모든 spring 이 rest length 에 있을 수 없다. 남은 stress 가 prestress 다.</p>
+<p>node position 은 metric MDS 로 정한다. classical (Torgerson) MDS 를 initial condition 으로 두고 SMACOF (stress majorization) 와 L-BFGS 로 $F$ 를 줄여, optimizer 가 멈춘 점을 <b>terminal</b> 이라 부른다. 아래 다섯 MDS terminal 은 projected Hessian $\mathbf H_\perp$ 이 positive definite 임을 확인했으므로 (Numbers) $F$ 의 strict local minimum 이다. constraint $N(N-1)/2$ 개가 degree of freedom $2N-3$ 보다 훨씬 많은 overconstrained framework 이고, hop distance metric 이 2차원 Euclidean metric 으로 정확히 실현되지 않는 한 ($F\gt0$; 다섯 network 모두 해당) 모든 spring 이 동시에 rest length 에 있을 수는 없다. terminal 에 남은 spring force 가 prestress 다.</p>
 <p>node $i$ 하나만 움직이고 나머지를 terminal 에 고정하면 $F$ 는 2차원 slice $F_i(\mathbf x)$ 가 되고, 그 Hessian 이 full $2N\times2N$ Hessian 의 $(i,i)$ block 이다.</p>
 $$F_i(\mathbf x)=\sum_{j\ne i}\bigl(\lVert\mathbf x-\mathbf x_j\rVert-\delta_{ij}\bigr)^2+\text{const},\qquad \mathbf H_{ii}=\nabla\nabla^{\mathsf T}F_i=\mathbf J(\nabla F_i).$$
-<p>symmetric matrix $\mathbf H_{ii}$ 의 eigenvalue $\lambda_1\le\lambda_2$ 는 principal curvature, eigenvector 는 principal direction 이다. eigenvector $\mathbf v$ 방향으로 $\epsilon$ 만큼 움직이면 $F_i(\mathbf x+\epsilon\mathbf v)=F_i(\mathbf x)+\epsilon\,\nabla F_i\cdot\mathbf v+\tfrac12\lambda\epsilon^2+O(\epsilon^3)$ 이다.</p>
+<p>symmetric matrix $\mathbf H_{ii}$ 의 eigenvalue $\lambda_1\le\lambda_2$ 는 그 eigenvector 방향의 second directional derivative 이다 ($F_i$ 의 graph 곡면이 갖는 principal curvature 와는 $\nabla F_i=\mathbf 0$ 에서만 일치한다). eigenvector $\mathbf v$ 방향으로 $\epsilon$ 만큼 움직이면 $F_i(\mathbf x+\epsilon\mathbf v)=F_i(\mathbf x)+\epsilon\,\nabla F_i\cdot\mathbf v+\tfrac12\lambda\epsilon^2+O(\epsilon^3)$ 이다.</p>
 <div class="tbl"><table>
-<caption>eigenvalue 부호에 따른 local curvature type. stationary point ($\nabla F_i=\mathbf 0$) 가 아닌 곳에서는 그 자리의 curvature type 일 뿐이고, stationary point 에서만 Morse index 가 된다.</caption>
+<caption>eigenvalue 부호에 따른 local curvature type. stationary point ($\nabla F_i=\mathbf 0$) 가 아닌 곳에서는 그 자리의 이차 형태일 뿐이고, 음의 eigenvalue 개수가 Morse index 가 되는 것은 nondegenerate stationary point 에서뿐이다.</caption>
 <thead><tr><th scope="col">type</th><th scope="col">eigenvalues</th><th scope="col">at a stationary point</th></tr></thead>
 <tbody>
 <tr><td><span class="sw" style="background:var(--viz-up)"></span><b>BOWL</b></td><td>$0\lt\lambda_1\le\lambda_2$</td><td>local minimum, index 0</td></tr>
@@ -318,8 +318,8 @@ $$F_i(\mathbf x)=\sum_{j\ne i}\bigl(\lVert\mathbf x-\mathbf x_j\rVert-\delta_{ij
 $$\mathrm{NEI}=\frac{1}{\binom N2}\sum_{i<j}\frac{\operatorname{Var}_m\bigl(d_{ij}^{(m)}\bigr)}{\bigl\langle d_{ij}^{(m)}\bigr\rangle_m^{2}},\qquad m=1,\dots,M.$$
 <p>붉은 쪽의 Hessian 은 이 ensemble 위의 slice 다. terminal $m$ 을 기준 MDS terminal 에 orthogonal Procrustes (translation, rotation, reflection) 로 맞춘 좌표 $\tilde{\mathbf x}_j^{(m)}$ 로 다른 node 를 고정하고, slice energy 를 ensemble 평균한다.</p>
 $$\langle F_i\rangle_M(\mathbf x)=\frac1M\sum_{m=1}^{M}\sum_{j\ne i}\bigl(\lVert\mathbf x-\tilde{\mathbf x}_j^{(m)}\rVert-\delta_{ij}\bigr)^2,\qquad \langle\mathbf H_{ii}\rangle_M=\nabla\nabla^{\mathsf T}\langle F_i\rangle_M=\langle K\rangle_M+\langle S\rangle_M .$$
-<p>Hessian 은 선형이라 평균의 Hessian 이 Hessian 의 평균이다. $\operatorname{tr}\langle K\rangle_M=2(N-1)$ 은 그대로이므로, ensemble 이 바꾸는 것은 $\langle S\rangle_M$ 뿐이다. terminal 마다 다른 node 의 위치가 퍼질수록 (NEI 가 클수록) 한 terminal 의 날카로운 basin 과 dome 이 평균에서 흐려진다.</p>
-<p>$\langle F_i\rangle_M$ 은 Procrustes 기준 (gauge) 에 의존한다. gauge 와 무관한 비교로, 각 terminal 이 자기 위치에서 갖는 block $\mathbf H_{ii}^{(m)}\bigl(\mathbf x_i^{(m)}\bigr)$ 의 eigenvalue 분포를 아래에 함께 그린다 (rotation 에 불변).</p>
+<p>미분은 선형이므로 평균의 Hessian 은 Hessian 의 평균이다. $\operatorname{tr}\langle K\rangle_M=2(N-1)$ 은 그대로이므로 trace 를 바꾸는 것은 $\langle S\rangle_M$ 뿐이다 ($\langle K\rangle_M$ 의 anisotropy 는 바뀐다). 평균이 basin 구조를 지운다고 기대하기 쉽지만, 이 다섯 preset node 에서는 그렇지 않다. landscape window 의 $61\times61$ grid 에서 local minimum 개수는 단일 terminal 대 ensemble 평균이 karate 2 대 2, dolphins 2 대 2, Les Misérables 3 대 1, football 1 대 1, ca-netscience 2 대 2 였고, dome ($\lambda_1\le\lambda_2\lt0$) 면적 비율은 Les Misérables 에서만 늘고 (0.059 → 0.078) 나머지 넷에서는 조금 줄었다. 그림에서 붉은 landscape 가 더 매끈해 보인다면 높이 변환과 subsample ($M_s$) 의 영향일 수 있으니, 비교는 위 숫자로 한다. aligned 좌표에서 다른 node 의 position spread 는 Procrustes 에 의존하는 양이라 NEI (gauge 와 무관한 pair-distance spread) 와 관련은 있어도 같은 양은 아니다.</p>
+<p>$\langle F_i\rangle_M$ 은 Procrustes 기준 (gauge) 에 의존한다. gauge 와 무관한 비교로, 각 terminal 이 자기 위치에서 갖는 block $\mathbf H_{ii}^{(m)}\bigl(\mathbf x_i^{(m)}\bigr)$ 의 eigenvalue 분포를 아래에 함께 그린다 (rigid motion 에 불변). ensemble terminal 은 optimizer 가 멈춘 점이며, 각각의 $\mathbf H_\perp$ 로 local minimum 인지 확인하지는 않았다.</p>
 <canvas id="lamcloud" width="1040" height="640" aria-label="eigenvalues of each terminal's own node block"></canvas>
 <p class="fine" id="lamcloud-note"></p>
 </section>
@@ -328,9 +328,9 @@ $$\langle F_i\rangle_M(\mathbf x)=\frac1M\sum_{m=1}^{M}\sum_{j\ne i}\bigl(\lVert
 <h2>$K$ and $S$: curvature 는 어디서 오는가</h2>
 <p>쌍 방향의 unit vector 를 $\mathbf u_{ij}=(\mathbf x_i-\mathbf x_j)/d_{ij}$, projector 를 $P_{ij}=\mathbf u_{ij}\mathbf u_{ij}^{\mathsf T}$ 라 하면 block 은 정확히 두 항으로 나뉜다.</p>
 $$\mathbf H_{ii}=\underbrace{2\sum_{j\ne i}P_{ij}}_{K\ \succeq\ 0\ \text{(stiffness)}}\;+\;\underbrace{\sum_{j\ne i}\omega_{ij}\bigl(\mathbf I-P_{ij}\bigr)}_{S\ \text{(prestress)}},\qquad \omega_{ij}=\frac{2\,(d_{ij}-\delta_{ij})}{d_{ij}}.$$
-<p>$K$ 는 spring 을 longitudinal 방향으로 늘이는 (material) stiffness 다. 위치와 무관하게 $\operatorname{tr}K=2(N-1)$ 이므로 curvature type 을 정하는 것은 $S$ 다. $\omega_{ij}$ 는 force density (길이당 tension) 로, rigidity theory 의 stress coefficient 와 같은 양이다. $S$ 는 transverse 방향에만 작용하는 geometric (stress) stiffness 로, tension ($\omega\gt0$) 은 transverse 방향을 단단하게, compression ($\omega\lt0$) 은 무르게 만든다. 따라서</p>
+<p>$K$ 는 spring 을 longitudinal 방향으로 늘이는 (material) stiffness 다. 위치와 무관하게 $\operatorname{tr}K=2(N-1)$ 이지만 $K$ 의 anisotropy 는 위치에 따라 바뀐다. $\omega_{ij}$ 는 force density (길이당 tension) 로, rigidity theory 의 stress coefficient 와 같은 양이다. $S$ 는 transverse 방향에만 작용하는 geometric (stress) stiffness 로, tension ($\omega\gt0$) 은 transverse 방향을 단단하게, compression ($\omega\lt0$) 은 무르게 만든다. 따라서</p>
 $$\operatorname{tr}\mathbf H_{ii}=2(N-1)+\sum_{j\ne i}\omega_{ij},\qquad \text{DOME}\ \Rightarrow\ \sum_{j\ne i}\omega_{ij}\lt-2(N-1).$$
-<p>즉 dome 은 그 자리에서 compression 의 force density 합이 고정된 stiffness 합을 넘어설 때만 생긴다. 같은 graph 라도 prestress 의 배치가 terminal 마다 다르므로 curvature map 도 terminal 마다 다르다.</p>
+<p>즉 dome 의 필요조건은 그 자리에서 compression 의 force density 합이 고정된 stiffness trace 를 넘어서는 것이고, 이것은 $S$ 만으로 정해진다. 반면 saddle ($\det\mathbf H_{ii}\lt0$) 은 $K$ 의 anisotropy 와 $S$ 가 함께 정한다. 같은 graph 라도 terminal 마다 좌표와 prestress 배치가 다르므로 curvature map 도 terminal 마다 다르다.</p>
 </section>
 
 <section id="numbers">
@@ -347,8 +347,8 @@ $$\operatorname{tr}\mathbf H_{ii}=2(N-1)+\sum_{j\ne i}\omega_{ij},\qquad \text{D
 <ul>
 <li><b>Slice 다.</b> barrier 와 second basin 은 다른 $N-1$ 개 node 를 고정한 conditional 값이다. 모든 node 가 함께 relax 하는 full landscape 의 minimum-energy path 와는 다른 양이며, 다른 좌표가 relax 하면 barrier 는 낮아질 수 있다.</li>
 <li><b>Block 판정이다.</b> BOWL / SADDLE / DOME 은 $\mathbf H_{ii}$ 하나에 대한 것이다. terminal 전체의 stability 는 Numbers 표의 $\mathbf H_\perp$ (rigid-body mode 3개를 뺀 $2N-3$ 차원) 로 따로 확인했다.</li>
-<li><b>Unweighted stress.</b> graph drawing 에서 흔한 $w_{ij}=\delta_{ij}^{-2}$ weight (Kamada–Kawai 형) 가 아니다. weight 를 넣으면 $K$ 와 $\omega_{ij}$ 에 $w_{ij}$ 가 곱해질 뿐 decomposition 의 형태는 같다.</li>
-<li><b>Data.</b> 모두 largest connected component, unweighted. Zachary karate club ($N=34$), Lusseau dolphins ($N=62$), Les Misérables co-appearance ($N=77$), college football ($N=115$), ca-netscience coauthorship ($N=352$).</li>
+<li><b>Unweighted stress.</b> graph drawing 에서 흔한 $w_{ij}=\delta_{ij}^{-2}$ weight (Kamada–Kawai 형) 가 아니다. weight 를 넣으면 $K$ 와 $\omega_{ij}$ 에 $w_{ij}$ 가 곱해질 뿐 decomposition 의 형태는 같고, 다만 $\operatorname{tr}K=2\sum_j w_{ij}$ 가 된다.</li>
+<li><b>Data.</b> 모두 unweighted. Zachary karate club ($N=34$), Lusseau dolphins ($N=62$), Les Misérables co-appearance ($N=77$, weight 제거), college football ($N=115$) 은 largest connected component 다. ca-netscience coauthorship 은 Network Repository 의 ca-netscience 를 NEI 연구에서 쓴 그대로 ($N=352$, $E=707$) 가져왔다.</li>
 <li><b>Terminal.</b> classical MDS → SMACOF → L-BFGS, random seed 없음. classical MDS 에서 겹치는 structurally equivalent node 는 $10^{-3}$ 크기의 golden-angle offset 으로 떼어 놓았다.</li>
 <li><b>Preset node.</b> 모든 node 의 slice 에서 terminal 이 아닌 basin (grid local minimum 을 BFGS 로 다듬고, minimax path 의 barrier 가 두 minimum 보다 0.05 이상 높은 것) 을 찾아 gain $F_i^{\rm term}-F_i^{\rm basin}$ 이 가장 큰 node 를 골랐다. gain $\gt0$ 이면 slice 안에 terminal 보다 낮은 basin 이 있다. college football 은 모든 slice 가 single basin 이라, $\lambda_1$ 이 가장 작은 (가장 soft 한) node 로 dome region 까지 다녀오는 curvature tour 를 보여 준다. 현상이 잘 보이는 node 를 고른 것이지 random sample 이 아니다.</li>
 <li><b>NEI ensemble.</b> 각 network 에서 census protocol 로 $M=500$ 개 terminal 을 만들고 (build/ensemble.py), 기준 MDS terminal 에 orthogonal Procrustes 로 맞췄다. 붉은 landscape 와 contour 는 계산량 때문에 처음 $M_s$ 개 terminal 로 그리고 ($M_s$ 는 그림 아래 표시), 붉은 Hessian readout 과 eigenvalue 분포는 $M$ 전체를 쓴다. $\langle F_i\rangle_M$ 과 그 Hessian 은 Procrustes gauge 에 의존하고, 자기 위치에서 잰 $\mathbf H_{ii}^{(m)}$ 의 eigenvalue 는 의존하지 않는다.</li>
@@ -367,6 +367,7 @@ $$\operatorname{tr}\mathbf H_{ii}=2(N-1)+\sum_{j\ne i}\omega_{ij},\qquad \text{D
 <li>D. E. Knuth, <i>The Stanford GraphBase</i> (Addison-Wesley, 1993) — Les Misérables.</li>
 <li>M. Girvan, M. E. J. Newman, Community structure in social and biological networks, <i>PNAS</i> <b>99</b>, 7821 (2002) — college football.</li>
 <li>M. E. J. Newman, Finding community structure in networks using the eigenvectors of matrices, <i>Phys. Rev. E</i> <b>74</b>, 036104 (2006) — netscience.</li>
+<li>R. A. Rossi, N. K. Ahmed, The network data repository with interactive graph analytics and visualization, <i>AAAI</i> (2015) — ca-netscience.</li>
 </ol>
 </section>
 
@@ -622,7 +623,7 @@ function drawLamCloud() {
   x.save(); x.translate(26, ty((y0 + y1) / 2)); x.rotate(-Math.PI / 2); x.fillText('λ₂', 0, 0); x.restore(); x.textAlign = 'left';
   x.fillText('BOWL (λ₁ > 0)', Math.max(tx(0), tx(x0)) + 12, ty(y1) + 34); if (tx(0) - tx(x0) > 170) x.fillText('λ₁ < 0', tx(x0) + 12, ty(y1) + 34);
   const bowl = own.filter(e => e[0] > 0).length, med = v => v.slice().sort((p, q) => p - q)[v.length >> 1];
-  setMath('lamcloud-note', `붉은 점: ${M} 개 terminal 각각에서 node ${sel} 의 block $\\mathbf H_{ii}^{(m)}$ 을 자기 위치 $\\mathbf x_i^{(m)}$ 에서 잰 eigenvalue $(\\lambda_1,\\lambda_2)$. 푸른 점: 기준 MDS terminal. BOWL 비율 ${(100 * bowl / M).toFixed(1)}%, median $\\lambda_1=${med(own.map(e => e[0])).toFixed(2)}$, median $\\lambda_2=${med(own.map(e => e[1])).toFixed(2)}$.`);
+  setMath('lamcloud-note', `붉은 점: ensemble terminal ${M} 개 각각에서 node ${sel} 의 block $\\mathbf H_{ii}^{(m)}$ 을 자기 위치 $\\mathbf x_i^{(m)}$ 에서 잰 eigenvalue $(\\lambda_1,\\lambda_2)$. 푸른 점: 기준 MDS terminal. BOWL 비율 ${(100 * bowl / M).toFixed(1)}%, median $\\lambda_1=${med(own.map(e => e[0])).toFixed(2)}$, median $\\lambda_2=${med(own.map(e => e[1])).toFixed(2)}$.`);
 }
 function drawVectors(h) {
   c4.clearRect(0, 0, W, W);
@@ -649,7 +650,7 @@ function readout(h, cls, he) {
     katex.render(`\\lambda_1=${f2(he.l1)},\\quad \\lambda_2=${f2(he.l2)}`, $('lam2'), {throwOnError: false}); }
   const ce = he.l1 > 0 ? 'BOWL' : he.l2 < 0 ? 'DOME' : 'SADDLE'; $('verdict2').textContent = ce + ' — ensemble mean'; $('verdict2').style.color = 'var(--viz-ens)';
   const V = $('verdict'), col = cls === 'bowl' ? 'up' : cls === 'dome' ? 'down' : 'sad';
-  V.textContent = cls === 'bowl' ? 'BOWL — 모든 direction 으로 positive curvature' : cls === 'dome' ? 'DOME — compression 이 stiffness 를 이긴다' : 'SADDLE — 한 direction 은 위, 다른 direction 은 아래';
+  V.textContent = cls === 'bowl' ? 'BOWL — 어느 방향으로든 위로 휜다' : cls === 'dome' ? 'DOME — compression 의 transverse softening 이 stiffness 를 이긴다' : 'SADDLE — 한 방향은 위로, 다른 방향은 아래로 휜다';
   V.style.color = `var(--viz-${col})`;
   const dF = h.f - Fref; $('dF').textContent = (dF >= 0 ? '+' : '−') + Math.abs(dF).toFixed(1);
   $('nT').textContent = h.nt; $('nC').textContent = h.nc; $('gN').textContent = Math.hypot(...h.g).toFixed(2);
@@ -740,8 +741,8 @@ function describe() {
   setMath('keys', `<div><dt>network</dt><dd>${NET.name}</dd></div><div><dt>size</dt><dd>$N=${n},\\ E=${E.length}$</dd></div><div><dt>constraints vs DOF</dt><dd>$${npair}$ vs $${2 * n - 3}$</dd></div><div><dt>NEI ($M=${M}$)</dt><dd>$${NET.ens.nei.toFixed(4)}$</dd></div><div><dt>compressed pairs</dt><dd>${(100 * ck.frac_comp).toFixed(1)}%</dd></div><div><dt>$\\lambda_{\\min}(\\mathbf H_\\perp)$</dt><dd>$${ck.lam_min.toFixed(2)}$</dd></div>${sliceKey}`);
   const tour = two ? `자동 경로: terminal → barrier → ${basinName}${domeStep} → terminal.` : `모든 node 의 slice 가 single basin 이라 자동 경로는 curvature tour: terminal${domeStep} → terminal.`;
   setMath('vizlead', `${NET.name} ($N=${n}$) 의 MDS terminal 에서 node ${NET.sel} (degree ${deg[NET.sel]}) 만 움직인다. ${tour}`);
-  const slice = two ? `node ${NET.sel} 하나만 옮기면 barrier ($+${bar}$) 너머에 $F$ 가 terminal 보다 $${gs}$ 만큼 ${gain > 0 ? '낮은 lower basin 이 있다. terminal 은 full space 에서 local minimum 이지만 (아래 표), 한 node 의 slice 만으로도 더 낮은 basin 이 보인다.' : '높은 second basin 이 있다. 이 slice 에서는 terminal 이 더 깊은 basin 이다.'}` : `이 network 의 MDS terminal 에서는 어느 node 의 slice 도 basin 이 하나뿐이다. 그래도 slice 안에는 compression 이 stiffness 를 이기는 dome region 이 있다.`;
-  setMath('facts', `terminal 에서 node ${NET.sel} 의 block 은 $\\lambda_1=${h0.l1.toFixed(2)}$, $\\lambda_2=${h0.l2.toFixed(2)}$ 이다. 이 curvature 는 stiffness (eigenvalue $${eK[0].toFixed(1)},\\ ${eK[1].toFixed(1)}$, 합 $2(N-1)=${2 * (n - 1)}$) 와 prestress (eigenvalue $${eS[0].toFixed(1)},\\ ${eS[1].toFixed(1)}$) 의 합이다. 이 node 의 spring ${n - 1} 개 중 ${h0.nc} 개가 compression 이라 $\\sum_j\\omega_{ij}=${sumw.toFixed(1)}$ 이고, prestress 가 stiffness 의 약 ${Math.round(-sumw / (2 * (n - 1)) * 100)}% 를 상쇄한다. ${slice}`);
+  const slice = two ? `node ${NET.sel} 하나만 옮기면 barrier ($+${bar}$) 너머에 $F$ 가 terminal 보다 $${gs}$ 만큼 ${gain > 0 ? '낮은 lower basin 이 있다. terminal 은 full space 에서 local minimum 이지만 (아래 표), 한 node 의 slice 만으로도 global minimum 이 아님이 드러난다.' : '높은 second basin 이 있다. 이 slice 안에서는 terminal 쪽 basin 이 더 깊다.'}` : `이 network 의 MDS terminal 에서는 어느 node 의 slice 도 basin 이 하나뿐이다. 그래도 slice 안에는 $\lambda_2\lt0$ 인 dome region 이 있다.`;
+  setMath('facts', `terminal 에서 node ${NET.sel} 의 block 은 $\\lambda_1=${h0.l1.toFixed(2)}$, $\\lambda_2=${h0.l2.toFixed(2)}$ 이다. 이 curvature 는 stiffness (eigenvalue $${eK[0].toFixed(1)},\\ ${eK[1].toFixed(1)}$, 합 $2(N-1)=${2 * (n - 1)}$) 와 prestress (eigenvalue $${eS[0].toFixed(1)},\\ ${eS[1].toFixed(1)}$) 의 합이다. 이 node 의 spring ${n - 1} 개 중 ${h0.nc} 개가 compression 이라 $\\sum_j\\omega_{ij}=${sumw.toFixed(1)}$ 이다. trace 로 보면 prestress 가 stiffness 의 약 ${Math.round(-sumw / (2 * (n - 1)) * 100)}% 를 상쇄한다. ${slice}`);
   setMath('checks', `<tr><td>stress</td><td>$F=${ck.F.toFixed(2)}$</td></tr><tr><td>full $\\mathbf H$ 의 zero mode</td><td>${ck.n_zero} 개 = translation 2 + rotation 1</td></tr><tr><td>$\\lambda_{\\min}(\\mathbf H_\\perp)$</td><td>$${ck.lam_min.toFixed(3)}\\gt0$: terminal 은 $2N$ 차원 full space 에서 local minimum</td></tr><tr><td>$\\max_i\\lVert\\nabla_iF\\rVert$</td><td>$${sci(ck.grad)}$</td></tr><tr><td>analytic $\\mathbf H_{ii}$ vs finite difference</td><td>relative difference $${sci(ck.fd)}$</td></tr><tr><td>terminal</td><td>classical MDS → SMACOF → L-BFGS</td></tr><tr><td>NEI ensemble</td><td>$M=${M}$ (census protocol), $\\mathrm{NEI}=${NET.ens.nei.toFixed(4)}$. terminal stress: min $${NET.ens.Fmin.toFixed(1)}$, median $${NET.ens.Fmed.toFixed(1)}$, max $${NET.ens.Fmax.toFixed(1)}$, $\\max\\lVert\\nabla F\\rVert=${sci(NET.ens.gmax)}$. 기준 MDS terminal 보다 stress 가 낮은 ensemble terminal: ${(100 * NET.ens.pct).toFixed(1)}%</td></tr>`);
 }
 function loadNet(key) {
