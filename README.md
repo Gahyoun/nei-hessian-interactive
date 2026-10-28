@@ -28,7 +28,7 @@ gauge 와 무관한 비교로 각 terminal 자기 위치의 $\mathbf H_{ii}^{(m)
 - plan view zoom: wheel · pinch · ＋／－ · "node 로 zoom", Shift + drag 로 pan. 확대가 멈추면 contour 를 보이는 영역에서 다시 그린다.
 - 3D landscape: top / tilt / side view, azimuth·elevation·zoom·height scale, drag·wheel·pinch.
 - live readout: $\mathbf H_{ii}=K+S$ (KaTeX), eigenvalue, curvature type.
-- Hessian 비교는 plan view 바로 아래에 배치. 작은 화면에서는 수식을 두 줄로 표시하고, 긴 조작·높이 변환 설명은 펼쳐 볼 수 있다.
+- Plan view 를 위에 크게 배치하고, 아래 두 열에서 single terminal 과 NEI ensemble 의 landscape·Hessian·고유값을 각각 비교한다. 작은 화면에서는 수식을 두 줄로 표시하고, 긴 조작·높이 변환 설명은 펼쳐 볼 수 있다.
 - node 번호로 선택 가능. plan view 에서 방향키로 이동, Shift + 방향키로 크게 이동, Home 으로 terminal 복귀.
 - 카메라 회전과 Hessian 계산을 분리하고, 화면 밖의 animation 은 멈춘다. 동작 줄이기 설정에서는 자동 경로와 회전을 시작하지 않는다.
 - design: KRDS 디자인 스타일 확장형 + 경상국립대 색·서체 (로고 없음). token 은 `assets/krds/` (Gahyoun/gnu-network-science-skills `templates/krds-design-system`).

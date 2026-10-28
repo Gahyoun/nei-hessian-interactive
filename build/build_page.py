@@ -147,8 +147,14 @@ thead th{border-top:2px solid var(--gk-text);background:var(--gk-surface-seconda
 .seg button{min-height:4rem;padding:0 1.4rem;border:0;background:var(--gk-surface);color:var(--gk-text);font:500 1.5rem 'Noto Sans KR',sans-serif;cursor:pointer}
 .seg button+button{border-left:1px solid var(--gk-border)}
 .seg button[aria-pressed=true]{background:var(--gk-btn-primary);color:var(--gk-text-inverse)}
-/* figure: layers (left) + landscape (right) */
-.viz{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:2rem;align-items:start}
+/* plan view above two matched landscape/readout columns */
+.viz{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--krds-number-10)}
+.plan-panel{width:100%;max-width:72rem;justify-self:center;min-width:0}
+.split .plan-panel{max-width:none}
+.landscape-panel{min-width:0}
+.landscape-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--krds-number-10);align-items:start}
+.landscape-column{min-width:0}
+.read h3{margin:0;font-size:var(--krds-typo-body-small);line-height:1.5}
 .panel-t{font:700 1.5rem/1.5 'Noto Sans KR',sans-serif;margin-bottom:.8rem;display:flex;flex-wrap:wrap;justify-content:space-between;gap:var(--krds-number-3) var(--krds-number-6)}
 .panel-t .hint{font-weight:400;color:var(--gk-text-subtle)}
 .panel-t{align-items:center;min-height:4rem}
@@ -177,7 +183,7 @@ thead th{border-top:2px solid var(--gk-text);background:var(--gk-surface-seconda
 .twin h3{margin:0;font-size:var(--krds-typo-body-small);line-height:1.5}
 .blue h3{color:var(--viz-down)}.red h3{color:var(--viz-ens)}
 .red .katex{color:var(--viz-ens)}
-#surf2{width:100%;height:auto;display:block;border:1px solid var(--gk-border);border-radius:var(--krds-radius-large);background:var(--viz-bg);cursor:grab;touch-action:none;margin-top:1.2rem}
+#surf2{width:100%;height:auto;display:block;border:1px solid var(--gk-border);border-radius:var(--krds-radius-large);background:var(--viz-bg);cursor:grab;touch-action:none}
 #lamcloud{width:100%;max-width:56rem;height:auto;display:block;border:1px solid var(--gk-border);border-radius:var(--krds-radius-medium);background:var(--viz-bg)}
 .legend{display:flex;flex-wrap:wrap;gap:.4rem 1.6rem;font-size:1.4rem;color:var(--gk-text-subtle);margin-top:.8rem}
 .legend i{display:inline-block;width:2rem;height:.4rem;vertical-align:middle;margin-right:.6rem;border-radius:.2rem}
@@ -206,7 +212,7 @@ code{font-size:.9em;background:var(--gk-surface-secondary);padding:.1rem .4rem;b
 .ft{background:var(--gk-surface-secondary);border-top:1px solid var(--gk-divider);padding:3.2rem 0;font-size:1.5rem;color:var(--gk-text-subtle)}
 .ft strong{color:var(--gk-text)}
 @media (max-width:1024px){.page{grid-template-columns:1fr}.toc{position:static;display:flex;flex-wrap:wrap;gap:.4rem}.toc b{width:100%}.toc a{min-height:4rem;border:1px solid var(--gk-divider);border-radius:var(--krds-radius-medium)}.split .layers{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:767px){.viz{grid-template-columns:1fr}.viz{gap:var(--krds-number-10)}.ctl{gap:var(--krds-number-5) var(--krds-number-7)}.ctl fieldset{gap:var(--krds-number-3) var(--krds-number-7)}.panel-t .hint{width:100%}.cam{gap:var(--krds-number-3) var(--krds-number-7)}.cam label{flex:1 1 14rem;justify-content:space-between}.cam input[type=range]{width:9.6rem}.split .layers{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:767px){.landscape-grid{grid-template-columns:minmax(0,1fr)}.viz{gap:var(--krds-number-10)}.ctl{gap:var(--krds-number-5) var(--krds-number-7)}.ctl fieldset{gap:var(--krds-number-3) var(--krds-number-7)}.panel-t .hint{width:100%}.cam{gap:var(--krds-number-3) var(--krds-number-7)}.cam label{flex:1 1 14rem;justify-content:space-between}.cam input[type=range]{width:9.6rem}.split .layers{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:768px){.wrap{padding:0 1.6rem}h1{font-size:var(--krds-mobile-typo-heading-xlarge)}h2{font-size:var(--krds-mobile-typo-heading-medium)}.stat{grid-template-columns:repeat(2,minmax(0,1fr))}.keys>div{padding:0 1.6rem 0 0;border-left:0;width:50%}}
 @media print{.ctl,.mode,.toc{display:none}}
 </style>
@@ -272,7 +278,7 @@ $$F_i(\mathbf x)=\sum_{j\ne i}\bigl(\lVert\mathbf x-\mathbf x_j\rVert-\delta_{ij
 </div>
 
 <div class="viz">
-  <div>
+  <div class="plan-panel">
     <div class="panel-t"><span>Plan view (layers)</span><div class="node-picker"><label for="node-choice">node</label><input type="number" id="node-choice" required min="0" step="1" inputmode="numeric" aria-describedby="selinfo"><button type="button" class="btn" id="node-apply">선택</button></div><span class="hint" id="selinfo"></span></div>
     <div class="layers" id="layers" tabindex="0" role="group" aria-label="Plan view. 방향키로 선택 node 이동, Home 으로 terminal 복귀">
       <figure class="layer" id="L1"><canvas width="1040" height="1040" aria-label="contour layer"></canvas><figcaption><b>① contour</b>$\log F_i$ 의 contour band</figcaption></figure>
@@ -296,23 +302,20 @@ $$F_i(\mathbf x)=\sum_{j\ne i}\bigl(\lVert\mathbf x-\mathbf x_j\rVert-\delta_{ij
       <span><i style="background:var(--viz-down)"></i>$\lambda\lt0$</span>
       <span><i style="background:var(--viz-ens)"></i>NEI ensemble</span>
     </div>
-<div class="read" aria-label="선택 node 의 Hessian 비교">
-  <div class="twin">
-    <div class="blue"><div class="read-head"><h3>single terminal</h3><span id="verdict"></span></div><div id="mat" tabindex="0" aria-label="Single terminal: Hessian, stiffness, prestress"></div><div class="verdict"><span id="lam"></span></div></div>
-    <div class="red"><div class="read-head"><h3>NEI ensemble · <span id="ens-count"></span></h3><span id="verdict2"></span></div><div id="mat2" tabindex="0" aria-label="Ensemble mean: Hessian, stiffness, prestress"></div><div class="verdict"><span id="lam2"></span></div></div>
+
   </div>
-  <div class="stat">
+  <div class="landscape-panel">
+    <div class="panel-t"><span>Landscape $F_i(\mathbf x)$</span> <div class="seg sm" role="group" aria-label="view"><button type="button" data-view="top" aria-pressed="false">top</button><button type="button" data-view="tilt" aria-pressed="true">tilt</button><button type="button" data-view="side" aria-pressed="false">side</button></div></div>
+    <div class="landscape-grid" aria-label="Single terminal 과 NEI ensemble 비교">
+      <div class="landscape-column"><canvas id="surf" width="1040" height="760" aria-label="3D landscape of F_i, single terminal"></canvas><div class="read"><div class="blue"><div class="read-head"><h3>single terminal</h3><span id="verdict"></span></div><div id="mat" tabindex="0" aria-label="Single terminal: Hessian, stiffness, prestress"></div><div class="verdict"><span id="lam"></span></div></div></div></div>
+      <div class="landscape-column"><canvas id="surf2" width="1040" height="760" aria-label="3D landscape of the ensemble mean F_i"></canvas><div class="read"><div class="red"><div class="read-head"><h3>NEI ensemble · <span id="ens-count"></span></h3><span id="verdict2"></span></div><div id="mat2" tabindex="0" aria-label="Ensemble mean: Hessian, stiffness, prestress"></div><div class="verdict"><span id="lam2"></span></div></div></div></div>
+    </div>
+    <div class="stat">
     <div>$F_i-F_i^{\rm term}$<b id="dF"></b></div>
     <div>tension pairs<b id="nT"></b></div>
     <div>compression pairs<b id="nC"></b></div>
     <div>$\lVert\nabla F_i\rVert$<b id="gN"></b></div>
   </div>
-</div>
-  </div>
-  <div>
-    <div class="panel-t"><span>Landscape $F_i(\mathbf x)$</span> <div class="seg sm" role="group" aria-label="view"><button type="button" data-view="top" aria-pressed="false">top</button><button type="button" data-view="tilt" aria-pressed="true">tilt</button><button type="button" data-view="side" aria-pressed="false">side</button></div></div>
-    <canvas id="surf" width="1040" height="760" aria-label="3D landscape of F_i, single terminal"></canvas>
-    <canvas id="surf2" width="1040" height="760" aria-label="3D landscape of the ensemble mean F_i"></canvas>
     <p class="legend"><span><i style="background:var(--viz-s-lo)"></i>single terminal $F_i$</span><span><i style="background:var(--viz-r-lo)"></i>NEI ensemble $\langle F_i\rangle_M$</span><span class="hint" id="msinfo"></span></p>
     <div class="cam" role="group" aria-label="camera">
       <label>azimuth <input type="range" id="cam-az" min="-180" max="180" step="1"></label>
