@@ -264,6 +264,13 @@ $$F_i(\mathbf x)=\sum_{j\ne i}\bigl(\lVert\mathbf x-\mathbf x_j\rVert-\delta_{ij
       <figure class="layer" id="L4"><canvas width="1040" height="1040" aria-label="eigenvector layer"></canvas><figcaption><b>④ eigenvector</b>$\mathbf H_{ii}$ 의 principal direction, 길이 ∝ $\lvert\lambda\rvert$</figcaption></figure>
       <figure class="layer" id="L5"><canvas width="1040" height="1040" aria-label="NEI ensemble layer"></canvas><figcaption><b>⑤ NEI ensemble</b>$M$ 개 terminal 의 node $i$ 위치, $\langle F_i\rangle_M$ contour, $\langle\mathbf H_{ii}\rangle_M$ 의 eigenvector</figcaption></figure>
     </div>
+    <div class="cam" role="group" aria-label="plan view zoom">
+      <button type="button" class="btn" id="pz-in" aria-label="zoom in">＋</button>
+      <button type="button" class="btn" id="pz-out" aria-label="zoom out">－</button>
+      <button type="button" class="btn" id="pz-node">node 로 zoom</button>
+      <button type="button" class="btn" id="pz-fit">전체 보기</button>
+      <span class="hint">wheel · pinch 로 zoom, Shift + drag 로 pan</span>
+    </div>
     <div class="legend">
       <span><i style="background:var(--viz-edge)"></i>graph edge</span>
       <span><i style="background:var(--viz-ten)"></i>tension $d\gt\delta$</span>
@@ -382,8 +389,15 @@ const [c1, c2, c3, c4, c5] = cvs.map(c => c.getContext('2d'));
 const W = cvs[0].width;
 let NET, n, X, E, Draw, span, cx, cy, S, deg, EX, M;
 const delta = (i, j) => Draw[i * n + j];
-const toC = (x, y) => [W / 2 + (x - cx) * S, W / 2 - (y - cy) * S];
-const fromC = (a, b) => [(a - W / 2) / S + cx, -(b - W / 2) / S + cy];
+const toB = (x, y) => [W / 2 + (x - cx) * S, W / 2 - (y - cy) * S];
+const fromB = (a, b) => [(a - W / 2) / S + cx, -(b - W / 2) / S + cy];
+// plan-view zoom and pan: canvas = W/2 + vz (base - W/2) + (vx, vy)
+let vz = 1, vx = 0, vy = 0;
+const toC = (x, y) => { const [a, b] = toB(x, y); return [W / 2 + vz * (a - W / 2) + vx, W / 2 + vz * (b - W / 2) + vy]; };
+const fromC = (a, b) => fromB(W / 2 + (a - W / 2 - vx) / vz, W / 2 + (b - W / 2 - vy) / vz);
+// an image drawn at view (z0, x0, y0) shown at the current view; redrawn sharp once zooming stops
+const blit = (ctx, img, [z0, x0, y0]) => { const f = vz / z0; ctx.setTransform(f, 0, 0, f, W / 2 * (1 - f) - f * x0 + vx, W / 2 * (1 - f) - f * y0 + vy); ctx.drawImage(img, 0, 0); ctx.setTransform(1, 0, 0, 1, 0, 0); };
+let redrawT = null; const viewChanged = () => { dirty = true; clearTimeout(redrawT); redrawT = setTimeout(() => { buildContour(); buildEnsLayer(); dirty = true; }, 250); };
 function setNet(key) {
   NET = NETS[key]; n = NET.N; X = NET.X; E = NET.E;
   Draw = Uint8Array.from(atob(NET.D), c => c.charCodeAt(0));
@@ -440,15 +454,18 @@ function hess(p, i) {
 function eig(M) { const tr = M[0] + M[2], det = M[0] * M[2] - M[1] * M[1], q = Math.sqrt(Math.max(tr * tr / 4 - det, 0)); return [tr / 2 - q, tr / 2 + q]; }
 
 // ── layer 1: contour bands of log F_i over the whole map ──
-let Fref = 0, win = null, surf = null;
+let Fref = 0, win = null, surf = null, contImg = null, contView = [1, 0, 0], ensView = [1, 0, 0];
 function buildContour() {
+  // sample the visible region so that zooming in adds detail
+  const [rx0, ry0] = fromC(0, W), rs = W / (S * vz);
   const G = 97, L = new Float64Array(G * G); let mn = Infinity, mx = -Infinity;
-  for (let a = 0; a < G; a++) for (let b = 0; b < G; b++) { const v = Fi([cx - span / 2 + span * b / (G - 1), cy - span / 2 + span * a / (G - 1)], sel); L[a * G + b] = v; mn = Math.min(mn, v); mx = Math.max(mx, v); }
+  for (let a = 0; a < G; a++) for (let b = 0; b < G; b++) { const v = Fi([rx0 + rs * b / (G - 1), ry0 + rs * a / (G - 1)], sel); L[a * G + b] = v; mn = Math.min(mn, v); mx = Math.max(mx, v); }
   for (let k = 0; k < G * G; k++) L[k] = Math.log(L[k] - mn + 1e-3 * (mx - mn));
   const srt = Array.from(L).sort((p, q) => p - q), NB = 22, qs = [];
   for (let k = 1; k < NB; k++) qs.push(srt[Math.floor(k / NB * (srt.length - 1))]);
-  const id = c1.createImageData(W, W), px = id.data, R = 4;
-  const at = (x, y) => { const bx = Math.min(G - 1.001, Math.max(0, (x - cx + span / 2) / span * (G - 1))), by = Math.min(G - 1.001, Math.max(0, (y - cy + span / 2) / span * (G - 1)));
+  const off = document.createElement('canvas'); off.width = off.height = W; const o1 = off.getContext('2d');
+  const id = o1.createImageData(W, W), px = id.data, R = 4;
+  const at = (x, y) => { const bx = Math.min(G - 1.001, Math.max(0, (x - rx0) / rs * (G - 1))), by = Math.min(G - 1.001, Math.max(0, (y - ry0) / rs * (G - 1)));
     const i0 = Math.floor(by), j0 = Math.floor(bx), fy = by - i0, fx = bx - j0;
     return L[i0 * G + j0] * (1 - fx) * (1 - fy) + L[i0 * G + j0 + 1] * fx * (1 - fy) + L[(i0 + 1) * G + j0] * (1 - fx) * fy + L[(i0 + 1) * G + j0 + 1] * fx * fy; };
   for (let yy = 0; yy < W; yy += R) for (let xx = 0; xx < W; xx += R) {
@@ -456,17 +473,18 @@ function buildContour() {
     const s = Math.pow(k / qs.length, 0.8), col = C['band-lo'].map((c, m) => c + (C['band-hi'][m] - c) * s);
     for (let dy = 0; dy < R; dy++) for (let dx = 0; dx < R; dx++) { const p4 = ((yy + dy) * W + xx + dx) * 4; px[p4] = col[0]; px[p4 + 1] = col[1]; px[p4 + 2] = col[2]; px[p4 + 3] = 255; }
   }
-  c1.putImageData(id, 0, 0);
-  const cell = span / (G - 1);
+  o1.putImageData(id, 0, 0);
+  const cell = rs / (G - 1);
   qs.forEach((lev, li) => {
-    c1.strokeStyle = rgba(C.iso, li < 6 ? 0.85 : 0.45); c1.lineWidth = li < 6 ? 2 : 1.2; c1.beginPath();
+    o1.strokeStyle = rgba(C.iso, li < 6 ? 0.85 : 0.45); o1.lineWidth = li < 6 ? 2 : 1.2; o1.beginPath();
     for (let a = 0; a < G - 1; a++) for (let b = 0; b < G - 1; b++) {
       const v = [L[a * G + b], L[a * G + b + 1], L[(a + 1) * G + b + 1], L[(a + 1) * G + b]], P = [[b, a], [b + 1, a], [b + 1, a + 1], [b, a + 1]], pts = [];
       for (let e = 0; e < 4; e++) { const u = v[e], w = v[(e + 1) % 4]; if ((u - lev) * (w - lev) < 0) { const tt = (lev - u) / (w - u); pts.push([P[e][0] + tt * (P[(e + 1) % 4][0] - P[e][0]), P[e][1] + tt * (P[(e + 1) % 4][1] - P[e][1])]); } }
-      for (let k = 0; k + 1 < pts.length; k += 2) { const A = toC(cx - span / 2 + pts[k][0] * cell, cy - span / 2 + pts[k][1] * cell), B = toC(cx - span / 2 + pts[k + 1][0] * cell, cy - span / 2 + pts[k + 1][1] * cell); c1.moveTo(A[0], A[1]); c1.lineTo(B[0], B[1]); }
+      for (let k = 0; k + 1 < pts.length; k += 2) { const A = toC(rx0 + pts[k][0] * cell, ry0 + pts[k][1] * cell), B = toC(rx0 + pts[k + 1][0] * cell, ry0 + pts[k + 1][1] * cell); o1.moveTo(A[0], A[1]); o1.lineTo(B[0], B[1]); }
     }
-    c1.stroke();
+    o1.stroke();
   });
+  contImg = off; contView = [vz, vx, vy];
 }
 // ── landscape window and surface heights (blue: single terminal, red: ensemble mean) ──
 let surf2 = null, MsS = 0, MsC = 0;
@@ -558,24 +576,26 @@ function arrow(c, x1, y1, x2, y2, col) {
 }
 let ensImg = null;
 function buildEnsLayer() {
+  // sample the visible region so that zooming in adds detail
+  const [rx0, ry0] = fromC(0, W), rs = W / (S * vz);
   // static part: ensemble-mean contour lines over the map and the M aligned positions of node i
   MsC = budget(61); const G = 61, L = new Float64Array(G * G); let mn = Infinity;
-  for (let a = 0; a < G; a++) for (let b = 0; b < G; b++) { const v = eFi([cx - span / 2 + span * b / (G - 1), cy - span / 2 + span * a / (G - 1)], sel, MsC); L[a * G + b] = v; mn = Math.min(mn, v); }
+  for (let a = 0; a < G; a++) for (let b = 0; b < G; b++) { const v = eFi([rx0 + rs * b / (G - 1), ry0 + rs * a / (G - 1)], sel, MsC); L[a * G + b] = v; mn = Math.min(mn, v); }
   let mx = -Infinity; for (let k = 0; k < G * G; k++) { L[k] = Math.log(L[k] - mn + 1); mx = Math.max(mx, L[k]); }
   const srt = Array.from(L).sort((p, q) => p - q), qs = []; for (let k = 1; k < 16; k++) qs.push(srt[Math.floor(k / 16 * (srt.length - 1))]);
-  const off = document.createElement('canvas'); off.width = off.height = W; const o = off.getContext('2d'), cell = span / (G - 1);
+  const off = document.createElement('canvas'); off.width = off.height = W; const o = off.getContext('2d'), cell = rs / (G - 1);
   qs.forEach((lev, li) => { o.strokeStyle = rgba(C.ens, li < 5 ? 0.9 : 0.5); o.lineWidth = li < 5 ? 2.4 : 1.4; o.setLineDash(li < 5 ? [] : [8, 6]); o.beginPath();
     for (let a = 0; a < G - 1; a++) for (let b = 0; b < G - 1; b++) {
       const v = [L[a * G + b], L[a * G + b + 1], L[(a + 1) * G + b + 1], L[(a + 1) * G + b]], P = [[b, a], [b + 1, a], [b + 1, a + 1], [b, a + 1]], pts = [];
       for (let e = 0; e < 4; e++) { const u = v[e], w = v[(e + 1) % 4]; if ((u - lev) * (w - lev) < 0) { const tt = (lev - u) / (w - u); pts.push([P[e][0] + tt * (P[(e + 1) % 4][0] - P[e][0]), P[e][1] + tt * (P[(e + 1) % 4][1] - P[e][1])]); } }
-      for (let k = 0; k + 1 < pts.length; k += 2) { const A = toC(cx - span / 2 + pts[k][0] * cell, cy - span / 2 + pts[k][1] * cell), B = toC(cx - span / 2 + pts[k + 1][0] * cell, cy - span / 2 + pts[k + 1][1] * cell); o.moveTo(A[0], A[1]); o.lineTo(B[0], B[1]); } }
+      for (let k = 0; k + 1 < pts.length; k += 2) { const A = toC(rx0 + pts[k][0] * cell, ry0 + pts[k][1] * cell), B = toC(rx0 + pts[k + 1][0] * cell, ry0 + pts[k + 1][1] * cell); o.moveTo(A[0], A[1]); o.lineTo(B[0], B[1]); } }
     o.stroke(); });
   o.setLineDash([]); o.fillStyle = rgba(C.ens, Math.min(0.6, 30 / M + 0.12));
   for (let m = 0; m < M; m++) { const o2 = m * n * 2 + 2 * sel, [a, b] = toC(EX[o2], EX[o2 + 1]); o.beginPath(); o.arc(a, b, 5, 0, 7); o.fill(); }
-  ensImg = off;
+  ensImg = off; ensView = [vz, vx, vy];
 }
 function drawEns(he) {
-  c5.clearRect(0, 0, W, W); if (ensImg) c5.drawImage(ensImg, 0, 0);
+  c5.clearRect(0, 0, W, W); if (ensImg) blit(c5, ensImg, ensView);
   const [a, b] = toC(...pos), lm = Math.max(Math.abs(he.l1), Math.abs(he.l2)) || 1;
   for (const [l, v] of [[he.l1, he.v1], [he.l2, he.v2]]) { const L = 34 + 76 * Math.abs(l) / lm; for (const sg of [1, -1]) arrow(c5, a, b, a + sg * v[0] * L, b - sg * v[1] * L, l > 0 ? C.ens : C['ens-lt']); }
 }
@@ -645,23 +665,38 @@ function frame() {
   if (key !== lastPos || dirty) {
     const h = hess(pos, sel), cls = h.l1 > 0 ? 'bowl' : h.l2 < 0 ? 'dome' : 'saddle';
     const he = eHess(pos, sel), ce = he.l1 > 0 ? 'bowl' : he.l2 < 0 ? 'dome' : 'saddle';
-    drawSprings(); drawNetwork(); drawVectors(h); drawEns(he); drawSurf(sv, surf, 's', cls, true); drawSurf(sv2, surf2, 'r', ce, false); readout(h, cls, he); lastPos = key; dirty = false;
+    c1.clearRect(0, 0, W, W); if (contImg) blit(c1, contImg, contView); drawSprings(); drawNetwork(); drawVectors(h); drawEns(he); drawSurf(sv, surf, 's', cls, true); drawSurf(sv2, surf2, 'r', ce, false); readout(h, cls, he); lastPos = key; dirty = false;
   }
   requestAnimationFrame(frame);
 }
 // ── interaction ──
 const lay = $('layers');
 const evp = e => { const c = e.target.closest('canvas'); const r = c.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * W, (e.clientY - r.top) / r.height * W]; };
+const zoomAt = (f, a, b) => { const nz = Math.max(1, Math.min(12, vz * f)); f = nz / vz; vx = a - W / 2 - f * (a - W / 2 - vx); vy = b - W / 2 - f * (b - W / 2 - vy); vz = nz; if (vz === 1) { vx = vy = 0; } viewChanged(); };
+lay.addEventListener('wheel', e => { if (!e.target.closest('canvas')) return; e.preventDefault(); zoomAt(Math.exp(-e.deltaY * 0.0015), ...evp(e)); }, {passive: false});
+let pan = null; const ptr = new Map(); let pz0 = null;
 lay.addEventListener('pointerdown', e => {
   if (!e.target.closest('canvas')) return;
+  ptr.set(e.pointerId, evp(e));
+  if (ptr.size === 2) { const [p, q] = [...ptr.values()]; pz0 = [Math.hypot(p[0] - q[0], p[1] - q[1]), vz]; dragging = false; pan = null; return; }
+  if (e.shiftKey) { pan = [...evp(e), vx, vy]; e.target.setPointerCapture(e.pointerId); return; }
   const [a, b] = evp(e); let best = -1, bd = 22;
   for (let j = 0; j < n; j++) { if (j === sel) continue; const [u, v] = toC(...X[j]); const dd = Math.hypot(u - a, v - b); if (dd < bd) { bd = dd; best = j; } }
   const [u0, v0] = toC(...pos);
   if (best >= 0 && Math.hypot(u0 - a, v0 - b) > 24) { sel = best; pos = X[sel].slice(); setPlay(false); rebuild(); return; }
   dragging = true; setPlay(false); pos = fromC(a, b); e.target.setPointerCapture(e.pointerId);
 });
-lay.addEventListener('pointermove', e => { if (dragging) pos = fromC(...evp(e)); });
-lay.addEventListener('pointerup', () => { dragging = false; });
+lay.addEventListener('pointermove', e => {
+  if (!e.target.closest('canvas')) return;
+  if (ptr.has(e.pointerId)) ptr.set(e.pointerId, evp(e));
+  if (pz0 && ptr.size === 2) { const [p, q] = [...ptr.values()]; zoomAt(pz0[1] * Math.hypot(p[0] - q[0], p[1] - q[1]) / pz0[0] / vz, (p[0] + q[0]) / 2, (p[1] + q[1]) / 2); return; }
+  if (pan) { const [a, b] = evp(e); vx = pan[2] + a - pan[0]; vy = pan[3] + b - pan[1]; viewChanged(); return; }
+  if (dragging) pos = fromC(...evp(e)); });
+const lift = e => { ptr.delete(e.pointerId); if (ptr.size < 2) pz0 = null; dragging = false; pan = null; };
+lay.addEventListener('pointerup', lift); lay.addEventListener('pointercancel', lift);
+$('pz-in').onclick = () => zoomAt(1.5, W / 2, W / 2); $('pz-out').onclick = () => zoomAt(1 / 1.5, W / 2, W / 2);
+$('pz-fit').onclick = () => { vz = 1; vx = vy = 0; viewChanged(); };
+$('pz-node').onclick = () => { const [a, b] = toB(...pos); vz = 4; vx = -vz * (a - W / 2); vy = -vz * (b - W / 2); viewChanged(); };
 let rot = null;
 const touches = new Map(); let pinch = null;
 for (const cv of [sv, sv2]) {
@@ -710,7 +745,7 @@ function describe() {
   setMath('checks', `<tr><td>stress</td><td>$F=${ck.F.toFixed(2)}$</td></tr><tr><td>full $\\mathbf H$ 의 zero mode</td><td>${ck.n_zero} 개 = translation 2 + rotation 1</td></tr><tr><td>$\\lambda_{\\min}(\\mathbf H_\\perp)$</td><td>$${ck.lam_min.toFixed(3)}\\gt0$: terminal 은 $2N$ 차원 full space 에서 local minimum</td></tr><tr><td>$\\max_i\\lVert\\nabla_iF\\rVert$</td><td>$${sci(ck.grad)}$</td></tr><tr><td>analytic $\\mathbf H_{ii}$ vs finite difference</td><td>relative difference $${sci(ck.fd)}$</td></tr><tr><td>terminal</td><td>classical MDS → SMACOF → L-BFGS</td></tr><tr><td>NEI ensemble</td><td>$M=${M}$ (census protocol), $\\mathrm{NEI}=${NET.ens.nei.toFixed(4)}$. terminal stress: min $${NET.ens.Fmin.toFixed(1)}$, median $${NET.ens.Fmed.toFixed(1)}$, max $${NET.ens.Fmax.toFixed(1)}$, $\\max\\lVert\\nabla F\\rVert=${sci(NET.ens.gmax)}$. 기준 MDS terminal 보다 stress 가 낮은 ensemble terminal: ${(100 * NET.ens.pct).toFixed(1)}%</td></tr>`);
 }
 function loadNet(key) {
-  setNet(key); sel = NET.sel; pos = X[sel].slice(); t = 0; lastTex = '';
+  setNet(key); vz = 1; vx = vy = 0; sel = NET.sel; pos = X[sel].slice(); t = 0; lastTex = '';
   document.querySelectorAll('#nets button').forEach(b => b.setAttribute('aria-pressed', b.dataset.net === key));
   describe(); rebuild(); setPlay(!matchMedia('(prefers-reduced-motion: reduce)').matches);
 }

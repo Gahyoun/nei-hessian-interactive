@@ -24,7 +24,8 @@ gauge 와 무관한 비교로 각 terminal 자기 위치의 $\mathbf H_{ii}^{(m)
 | ca-netscience | 352 | 0.0329 |
 
 ## Page
-- plan view 를 다섯 layer 로 분리: contour ($\log F_i$) · spring stress · network · eigenvector · NEI ensemble. overlay / split 전환.
+- plan view 를 다섯 layer 로 분리: contour ($\log F_i$) · spring stress · network · eigenvector · NEI ensemble.
+- plan view zoom: wheel · pinch · ＋／－ · "node 로 zoom", Shift + drag 로 pan. 확대가 멈추면 contour 를 보이는 영역에서 다시 그린다. overlay / split 전환.
 - 3D landscape: top / tilt / side view, azimuth·elevation·zoom·height scale, drag·wheel·pinch.
 - live readout: $\mathbf H_{ii}=K+S$ (KaTeX), eigenvalue, curvature type.
 - design: KRDS 디자인 스타일 확장형 + 경상국립대 색·서체 (로고 없음). token 은 `assets/krds/` (Gahyoun/gnu-network-science-skills `templates/krds-design-system`).
