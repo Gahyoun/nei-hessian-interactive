@@ -58,6 +58,7 @@ HTML = r"""<!doctype html>
   --viz-ten:var(--krds-color-light-primary-50);--viz-com:var(--krds-color-light-point-50);
   --viz-up:var(--krds-color-light-warning-40);--viz-down:var(--krds-color-light-primary-70);--viz-sad:var(--krds-color-light-success-50);
   --viz-mark:var(--krds-color-light-gray-90);
+  --type-up:var(--krds-color-light-warning-60);--type-down:var(--gk-text-primary);--type-sad:var(--krds-color-light-success-60);
   --viz-r-lo:var(--krds-color-light-danger-40);--viz-r-mid:var(--krds-color-light-danger-10);--viz-r-hi:var(--krds-color-light-point-5);--viz-ens:var(--krds-color-light-danger-60);--viz-ens-lt:var(--krds-color-light-danger-30);
   --viz-s-lo:var(--krds-color-light-primary-40);--viz-s-mid:var(--krds-color-light-primary-10);--viz-s-hi:var(--krds-color-light-point-5);
 }
@@ -69,6 +70,7 @@ HTML = r"""<!doctype html>
   --viz-ten:var(--krds-color-high-contrast-primary-30);--viz-com:var(--krds-color-high-contrast-point-30);
   --viz-up:var(--krds-color-high-contrast-warning-30);--viz-down:var(--krds-color-high-contrast-primary-20);--viz-sad:var(--krds-color-high-contrast-success-40);
   --viz-mark:var(--krds-color-high-contrast-gray-0);
+  --type-up:var(--krds-color-high-contrast-warning-20);--type-down:var(--gk-text-primary);--type-sad:var(--krds-color-high-contrast-success-20);
   --viz-r-lo:var(--krds-color-high-contrast-danger-50);--viz-r-mid:var(--krds-color-high-contrast-danger-20);--viz-r-hi:var(--krds-color-high-contrast-point-5);--viz-ens:var(--krds-color-high-contrast-danger-30);--viz-ens-lt:var(--krds-color-high-contrast-danger-20);
   --viz-s-lo:var(--krds-color-high-contrast-primary-50);--viz-s-mid:var(--krds-color-high-contrast-primary-20);--viz-s-hi:var(--krds-color-high-contrast-point-5);
 }
@@ -85,20 +87,22 @@ a:hover{color:var(--gk-link-hover)}
 /* header — site name as text, no logo */
 .hd{border-bottom:1px solid var(--gk-divider)}
 .hd .wrap{display:flex;align-items:center;justify-content:space-between;gap:1.6rem;min-height:7.2rem}
-.site{font:800 2.2rem/1.2 'SUITE','Noto Sans KR',sans-serif;color:var(--gk-text);text-decoration:none}
+.site{font:700 2.2rem/1.5 'SUITE','Noto Sans KR',sans-serif;color:var(--gk-text);text-decoration:none}
 .site small{display:block;font:500 1.3rem/1.3 'Noto Sans KR',sans-serif;color:var(--gk-text-subtle)}
 .mode{min-height:4rem;padding:0 1.6rem;border:1px solid var(--gk-border);background:var(--gk-surface);color:var(--gk-text);border-radius:var(--krds-radius-medium);font:500 1.5rem 'Noto Sans KR',sans-serif;cursor:pointer}
 .crumb{background:var(--gk-surface-secondary)}
 .crumb ol{list-style:none;display:flex;flex-wrap:wrap;gap:.8rem;padding:1.2rem 2.4rem;margin:0 auto;max-width:124.8rem;font-size:1.5rem;color:var(--gk-text-subtle)}
 .crumb li+li::before{content:'›';margin-right:.8rem}
 /* title */
-.title{padding:4rem 0 2.4rem;border-bottom:1px solid var(--gk-divider)}
+.title{padding:var(--krds-number-10) 0;border-bottom:1px solid var(--gk-divider)}
 .eyebrow{font:700 1.5rem 'Noto Sans KR',sans-serif;color:var(--gk-text-primary);margin-bottom:.8rem}
-h1{font-size:var(--krds-pc-typo-heading-xlarge);font-weight:800;letter-spacing:-.02em}
+h1{font-size:var(--krds-pc-typo-heading-xlarge);font-weight:700;letter-spacing:-.02em}
 .lead{font-size:var(--krds-typo-body-large);color:var(--gk-text-subtle);margin-top:1.2rem;max-width:80rem}
 .lead .katex{font-size:1.05em}
+.nei-intro{max-width:92rem;margin-top:var(--krds-number-8);padding-left:var(--krds-number-7);border-left:2px solid var(--gk-border-primary);font-size:var(--krds-typo-body-medium);line-height:1.5}
+.nei-intro a{white-space:nowrap}
 /* page body: in-page nav + content */
-.page{display:grid;grid-template-columns:20rem minmax(0,1fr);gap:4rem;padding:3.2rem 0 8rem}
+.page{display:grid;grid-template-columns:16rem minmax(0,1fr);gap:var(--krds-number-10);padding:var(--krds-number-10) 0 var(--krds-number-20)}
 .page>*{min-width:0}
 .toc{position:sticky;top:1.6rem;align-self:start;font-size:1.5rem}
 .toc b{display:block;font-size:1.3rem;color:var(--gk-text-subtle);margin-bottom:.8rem}
@@ -145,10 +149,10 @@ thead th{border-top:2px solid var(--gk-text);background:var(--gk-surface-seconda
 .seg button[aria-pressed=true]{background:var(--gk-btn-primary);color:var(--gk-text-inverse)}
 /* figure: layers (left) + landscape (right) */
 .viz{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:2rem;align-items:start}
-.panel-t{font:700 1.5rem 'Noto Sans KR',sans-serif;margin-bottom:.8rem;display:flex;justify-content:space-between;gap:1rem}
+.panel-t{font:700 1.5rem/1.5 'Noto Sans KR',sans-serif;margin-bottom:.8rem;display:flex;flex-wrap:wrap;justify-content:space-between;gap:var(--krds-number-3) var(--krds-number-6)}
 .panel-t .hint{font-weight:400;color:var(--gk-text-subtle)}
 .panel-t{align-items:center;min-height:4rem}
-.seg.sm button{min-height:3.2rem;padding:0 1.2rem;font-size:1.4rem}
+.seg.sm button{min-height:4rem;padding:0 var(--krds-number-7);font-size:var(--krds-typo-body-small)}
 .layers{position:relative;aspect-ratio:1/1;border:1px solid var(--gk-border);border-radius:var(--krds-radius-large);overflow:hidden;background:var(--viz-bg);touch-action:none}
 .layer{position:absolute;inset:0;margin:0}
 .layer canvas{width:100%;height:100%;display:block}
@@ -167,10 +171,10 @@ thead th{border-top:2px solid var(--gk-text);background:var(--gk-surface-seconda
 .cam label{display:inline-flex;gap:.6rem;align-items:center;min-height:4rem}
 .cam input[type=range]{width:10rem;accent-color:var(--gk-btn-primary)}
 .cam input[type=checkbox]{width:1.8rem;height:1.8rem;accent-color:var(--gk-btn-primary)}
-.twin{display:grid;grid-template-columns:minmax(0,1fr);gap:1.6rem}
+.twin{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--krds-number-7)}
 .twin>div{min-width:0}
-.twin .red{border-top:1px solid var(--gk-divider);padding-top:1.2rem}
-.twin h3{margin:0 0 .4rem;font-size:1.6rem}
+.twin .red{border-top:1px solid var(--gk-divider);padding-top:var(--krds-number-7)}
+.twin h3{margin:0;font-size:var(--krds-typo-body-small);line-height:1.5}
 .blue h3{color:var(--viz-down)}.red h3{color:var(--viz-ens)}
 .red .katex{color:var(--viz-ens)}
 #surf2{width:100%;height:auto;display:block;border:1px solid var(--gk-border);border-radius:var(--krds-radius-large);background:var(--viz-bg);cursor:grab;touch-action:none;margin-top:1.2rem}
@@ -178,19 +182,31 @@ thead th{border-top:2px solid var(--gk-text);background:var(--gk-surface-seconda
 .legend{display:flex;flex-wrap:wrap;gap:.4rem 1.6rem;font-size:1.4rem;color:var(--gk-text-subtle);margin-top:.8rem}
 .legend i{display:inline-block;width:2rem;height:.4rem;vertical-align:middle;margin-right:.6rem;border-radius:.2rem}
 /* live readout */
-.read{margin-top:2.4rem;padding-top:1.6rem;border-top:2px solid var(--gk-text)}
-#mat{overflow-x:auto;font-size:1.9rem;min-height:9rem}
-.verdict{display:flex;flex-wrap:wrap;gap:.4rem 2rem;align-items:baseline;margin-top:.4rem}
-#lam{font-size:1.9rem}
-#verdict{font-weight:800;font-size:1.9rem}
+.read{margin-top:var(--krds-number-8);padding-top:var(--krds-number-7);border-top:2px solid var(--gk-border-secondary)}
+.read-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:var(--krds-number-3) var(--krds-number-5)}
+.read-head>span{font-size:var(--krds-typo-body-small);font-weight:700;color:var(--gk-text)}
+#mat,#mat2{max-width:100%;overflow-x:auto;overflow-y:hidden;font-size:var(--krds-typo-body-small)}
+.read .katex-display{margin:var(--krds-number-5) 0;padding:var(--krds-number-3) 0;text-align:left}
+.read .katex-display>.katex{text-align:left}
+.read .katex{font-size:1em}
+.verdict{display:flex;flex-wrap:wrap;gap:var(--krds-number-3) var(--krds-number-8);align-items:baseline}
+#lam,#lam2{font-size:var(--krds-typo-body-small)}
+.node-picker{display:flex;align-items:center;gap:var(--krds-number-5);font-size:var(--krds-typo-body-small);font-weight:500}
+.node-picker input{width:7.2rem;min-height:4rem;border:var(--gk-border-width-input,1px) solid var(--gk-border-input);border-radius:var(--krds-radius-medium);background:var(--gk-surface);color:var(--gk-text);font:inherit;padding:var(--krds-number-3) var(--krds-number-5)}
+.node-picker button{padding:0 var(--krds-number-6)}
+.viz-help{margin-top:var(--krds-number-7);border-top:1px solid var(--gk-divider);font-size:var(--krds-typo-body-small);line-height:1.5;color:var(--gk-text-subtle)}
+.viz-help summary{min-height:4rem;padding:var(--krds-number-5) 0;cursor:pointer;font-weight:700;color:var(--gk-text)}
+.viz-help p{margin:var(--krds-number-5) 0}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
 .stat{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:1.6rem;border-top:1px solid var(--gk-divider)}
-.stat div{padding:1rem 1.2rem 0;font-size:1.4rem;color:var(--gk-text-subtle)}
-.stat b{display:block;font-size:2rem;color:var(--gk-text);font-variant-numeric:tabular-nums}
+.stat div{min-width:0;padding:var(--krds-number-5) var(--krds-number-3) 0;font-size:var(--krds-typo-body-xsmall);color:var(--gk-text-subtle)}
+.stat b{display:block;font-size:var(--krds-typo-body-large);color:var(--gk-text);font-variant-numeric:tabular-nums}
 .refs{padding-left:2.2rem;font-size:1.5rem}
 code{font-size:.9em;background:var(--gk-surface-secondary);padding:.1rem .4rem;border-radius:.2rem}
 .ft{background:var(--gk-surface-secondary);border-top:1px solid var(--gk-divider);padding:3.2rem 0;font-size:1.5rem;color:var(--gk-text-subtle)}
 .ft strong{color:var(--gk-text)}
-@media (max-width:1024px){.page{grid-template-columns:1fr}.toc{position:static;display:flex;flex-wrap:wrap;gap:.4rem}.toc b{width:100%}.toc a{border:1px solid var(--gk-divider);border-radius:var(--krds-radius-medium)}.viz{grid-template-columns:1fr}.split .layers{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:1024px){.page{grid-template-columns:1fr}.toc{position:static;display:flex;flex-wrap:wrap;gap:.4rem}.toc b{width:100%}.toc a{min-height:4rem;border:1px solid var(--gk-divider);border-radius:var(--krds-radius-medium)}.split .layers{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:767px){.viz{grid-template-columns:1fr}.viz{gap:var(--krds-number-10)}.ctl{gap:var(--krds-number-5) var(--krds-number-7)}.ctl fieldset{gap:var(--krds-number-3) var(--krds-number-7)}.panel-t .hint{width:100%}.cam{gap:var(--krds-number-3) var(--krds-number-7)}.cam label{flex:1 1 14rem;justify-content:space-between}.cam input[type=range]{width:9.6rem}.split .layers{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:768px){.wrap{padding:0 1.6rem}h1{font-size:var(--krds-mobile-typo-heading-xlarge)}h2{font-size:var(--krds-mobile-typo-heading-medium)}.stat{grid-template-columns:repeat(2,minmax(0,1fr))}.keys>div{padding:0 1.6rem 0 0;border-left:0;width:50%}}
 @media print{.ctl,.mode,.toc{display:none}}
 </style>
@@ -208,6 +224,7 @@ code{font-size:.9em;background:var(--gk-surface-secondary);padding:.1rem .4rem;b
   <p class="eyebrow">Interactive note · statistical physics · network embedding</p>
   <h1>The stress Hessian</h1>
   <p class="lead">모든 node 쌍을 spring 으로 이은 network embedding 에서, node 하나를 움직일 때 energy 의 curvature 를 본다. node block Hessian $\mathbf H_{ii}$ 는 언제나 positive semidefinite 인 stiffness $K$ 와, 쌍마다 기여의 부호가 tension 의 부호로 정해지는 prestress $S$ 의 합으로 정확히 나뉜다.</p>
+  <p class="nei-intro"><b>NEI (Network Embedding Inconsistency)</b> 는 같은 network 를 같은 조건에서 반복 embedding 했을 때, node 쌍 거리의 상대적 분산을 평균한 값이다. 작을수록 초기조건에 따른 거리 배치의 차이가 작다. <a href="#nei">정의와 수식</a></p>
   <dl class="keys" id="keys" aria-label="Key numbers"></dl>
 </div>
 
@@ -238,7 +255,7 @@ $$F_i(\mathbf x)=\sum_{j\ne i}\bigl(\lVert\mathbf x-\mathbf x_j\rVert-\delta_{ij
 <section id="viz">
 <h2>Slice viewer</h2>
 <div class="netsel"><span class="lbl" id="net-lbl">network</span><div class="seg" id="nets" role="group" aria-labelledby="net-lbl"></div></div>
-<p><span id="vizlead"></span> 왼쪽은 네 layer 를 겹친 plan view, 오른쪽은 같은 $F_i$ 의 3D landscape 다. 다른 node 를 누르면 그 node 의 slice 로 바뀌고, 끌면 직접 움직인다.</p>
+<p><span id="vizlead"></span> Plan view 의 다섯 layer 와 같은 $F_i$ 의 3D landscape 를 비교한다. node 를 선택하거나 끌어서 slice 를 바꿀 수 있다.</p>
 
 <div class="ctl" role="group" aria-label="그림 조절">
   <button type="button" class="btn pri" id="play">일시정지</button>
@@ -256,8 +273,8 @@ $$F_i(\mathbf x)=\sum_{j\ne i}\bigl(\lVert\mathbf x-\mathbf x_j\rVert-\delta_{ij
 
 <div class="viz">
   <div>
-    <p class="panel-t">Plan view (layers) <span class="hint" id="selinfo"></span></p>
-    <div class="layers" id="layers">
+    <div class="panel-t"><span>Plan view (layers)</span><div class="node-picker"><label for="node-choice">node</label><input type="number" id="node-choice" required min="0" step="1" inputmode="numeric" aria-describedby="selinfo"><button type="button" class="btn" id="node-apply">선택</button></div><span class="hint" id="selinfo"></span></div>
+    <div class="layers" id="layers" tabindex="0" role="group" aria-label="Plan view. 방향키로 선택 node 이동, Home 으로 terminal 복귀">
       <figure class="layer" id="L1"><canvas width="1040" height="1040" aria-label="contour layer"></canvas><figcaption><b>① contour</b>$\log F_i$ 의 contour band</figcaption></figure>
       <figure class="layer" id="L2"><canvas width="1040" height="1040" aria-label="spring stress layer"></canvas><figcaption><b>② spring stress</b>선택 node 의 $N-1$ 개 spring</figcaption></figure>
       <figure class="layer" id="L3"><canvas width="1040" height="1040" aria-label="network layer"></canvas><figcaption><b>③ network</b>graph edge, node size ∝ √degree</figcaption></figure>
@@ -279,6 +296,18 @@ $$F_i(\mathbf x)=\sum_{j\ne i}\bigl(\lVert\mathbf x-\mathbf x_j\rVert-\delta_{ij
       <span><i style="background:var(--viz-down)"></i>$\lambda\lt0$</span>
       <span><i style="background:var(--viz-ens)"></i>NEI ensemble</span>
     </div>
+<div class="read" aria-label="선택 node 의 Hessian 비교">
+  <div class="twin">
+    <div class="blue"><div class="read-head"><h3>single terminal</h3><span id="verdict"></span></div><div id="mat" tabindex="0" aria-label="Single terminal: Hessian, stiffness, prestress"></div><div class="verdict"><span id="lam"></span></div></div>
+    <div class="red"><div class="read-head"><h3>NEI ensemble · <span id="ens-count"></span></h3><span id="verdict2"></span></div><div id="mat2" tabindex="0" aria-label="Ensemble mean: Hessian, stiffness, prestress"></div><div class="verdict"><span id="lam2"></span></div></div>
+  </div>
+  <div class="stat">
+    <div>$F_i-F_i^{\rm term}$<b id="dF"></b></div>
+    <div>tension pairs<b id="nT"></b></div>
+    <div>compression pairs<b id="nC"></b></div>
+    <div>$\lVert\nabla F_i\rVert$<b id="gN"></b></div>
+  </div>
+</div>
   </div>
   <div>
     <div class="panel-t"><span>Landscape $F_i(\mathbf x)$</span> <div class="seg sm" role="group" aria-label="view"><button type="button" data-view="top" aria-pressed="false">top</button><button type="button" data-view="tilt" aria-pressed="true">tilt</button><button type="button" data-view="side" aria-pressed="false">side</button></div></div>
@@ -293,23 +322,14 @@ $$F_i(\mathbf x)=\sum_{j\ne i}\bigl(\lVert\mathbf x-\mathbf x_j\rVert-\delta_{ij
       <label><input type="checkbox" id="cam-spin" checked>auto-rotate</label>
       <button type="button" class="btn" id="cam-reset">reset camera</button>
     </div>
-    <p class="fine">landscape 를 끌면 돌아간다 (좌우 = azimuth, 위아래 = elevation). wheel 이나 pinch 로 zoom.</p>
-    <p class="fine" id="gamma-note">height 는 window 안의 $F_i$ 를 saturating linear height $1-e^{-(F_i-F_{\min})/\ell}$ 와 rank (quantile) height 사이에서 섞은 값이다 (강조 0 = linear). $\ell$ 은 preset node 에서 barrier 높이의 2배, 그 밖에는 window median 까지의 높이다. 둘 다 monotone transform 이라 contour 와 stationary point 의 위치·type 은 그대로이고, 색칠한 curvature 판정은 언제나 원래 $F_i$ 의 $\mathbf H_{ii}$ 로 한다. plan view 의 점선 사각형이 landscape window 다.</p>
+    <details class="viz-help"><summary>조작 방법 · 높이 변환</summary>
+      <p>Landscape 를 끌면 회전하고, wheel 이나 pinch 로 zoom 한다. Plan view 는 Shift + drag 로 pan, 방향키로 선택 node 이동, Home 으로 terminal 에 복귀한다.</p>
+      <p id="gamma-note">height 는 window 안의 $F_i$ 를 saturating linear height $1-e^{-(F_i-F_{\min})/\ell}$ 와 rank (quantile) height 사이에서 섞은 값이다 (강조 0 = linear). $\ell$ 은 preset node 에서 barrier 높이의 2배, 그 밖에는 window median 까지의 높이다. 둘 다 monotone transform 이라 contour 와 stationary point 의 위치·type 은 그대로이고, 색칠한 curvature 판정은 언제나 원래 $F_i$ 의 $\mathbf H_{ii}$ 로 한다. plan view 의 점선 사각형이 landscape window 다.</p>
+    </details>
   </div>
 </div>
 
-<div class="read" aria-live="polite">
-  <div class="twin">
-    <div class="blue"><h3>single terminal</h3><div id="mat"></div><div class="verdict"><span id="lam"></span><span id="verdict"></span></div></div>
-    <div class="red"><h3>NEI ensemble ($M$ terminals)</h3><div id="mat2"></div><div class="verdict"><span id="lam2"></span><span id="verdict2"></span></div></div>
-  </div>
-  <div class="stat">
-    <div>$F_i-F_i^{\rm term}$<b id="dF"></b></div>
-    <div>tension pairs<b id="nT"></b></div>
-    <div>compression pairs<b id="nC"></b></div>
-    <div>$\lVert\nabla F_i\rVert$<b id="gN"></b></div>
-  </div>
-</div>
+<p id="viewer-status" class="sr-only" role="status"></p>
 </section>
 
 <section id="nei">
@@ -432,8 +452,11 @@ let C = {};
 const hex = s => { s = s.trim(); if (s[0] !== '#') return [128, 128, 128]; if (s.length === 4) s = '#' + [...s.slice(1)].map(c => c + c).join(''); return [1, 3, 5].map(k => parseInt(s.slice(k, k + 2), 16)); };
 const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 function readColors() { const cs = getComputedStyle(document.documentElement); for (const k of ['bg', 'band-lo', 'band-hi', 'iso', 'edge', 'node', 'node-ring', 'ten', 'com', 'up', 'down', 'sad', 'mark', 's-lo', 's-mid', 's-hi', 'r-lo', 'r-mid', 'r-hi', 'ens', 'ens-lt']) C[k] = hex(cs.getPropertyValue('--viz-' + k)); }
-let sel, pos, t = 0, playing = true, dragging = false, dirty = true;
-let gamma = 0.3, az = -0.75, el = 0.55; const cam = {zoom: 1, h: 1, spin: true};
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const narrowReadout = matchMedia('(max-width: 900px)');
+let sel, pos, t = 0, playing = !reducedMotion.matches, dragging = false, dirty = true;
+let planRevision = 0, viewerVisible = true;
+let gamma = 0.3, az = -0.75, el = 0.55; const cam = {zoom: 1, h: 1, spin: !reducedMotion.matches};
 
 function Fi(p, i) { let f = 0; for (let j = 0; j < n; j++) { if (j === i) continue; const e = Math.hypot(p[0] - X[j][0], p[1] - X[j][1]) - delta(i, j); f += e * e; } return f; }
 function hess(p, i) {
@@ -457,6 +480,7 @@ function eig(M) { const tr = M[0] + M[2], det = M[0] * M[2] - M[1] * M[1], q = M
 // ── layer 1: contour bands of log F_i over the whole map ──
 let Fref = 0, win = null, surf = null, contImg = null, contView = [1, 0, 0], ensView = [1, 0, 0];
 function buildContour() {
+  planRevision++;
   // sample the visible region so that zooming in adds detail
   const [rx0, ry0] = fromC(0, W), rs = W / (S * vz);
   const G = 97, L = new Float64Array(G * G); let mn = Infinity, mx = -Infinity;
@@ -577,6 +601,7 @@ function arrow(c, x1, y1, x2, y2, col) {
 }
 let ensImg = null;
 function buildEnsLayer() {
+  planRevision++;
   // sample the visible region so that zooming in adds detail
   const [rx0, ry0] = fromC(0, W), rs = W / (S * vz);
   // static part: ensemble-mean contour lines over the map and the M aligned positions of node i
@@ -641,35 +666,71 @@ function drawVectors(h) {
 const f2 = v => (Math.abs(v) >= 100 ? v.toFixed(0) : Math.abs(v) >= 10 ? v.toFixed(1) : v.toFixed(2));
 const bm = M => `\\begin{bmatrix}${f2(M[0])}&${f2(M[1])}\\\\${f2(M[1])}&${f2(M[2])}\\end{bmatrix}`;
 let lastTex = '', lastTex2 = '';
+const matrixTex = (h, ensemble = false) => {
+  const H = ensemble ? '\\langle\\mathbf H_{ii}\\rangle_M' : '\\mathbf H_{ii}';
+  const K = ensemble ? '\\langle K\\rangle' : 'K\\,\\succeq\\,0';
+  const S = ensemble ? '\\langle S\\rangle' : 'S';
+  const parts = `\\underbrace{${bm(h.K)}}_{${K}}+\\underbrace{${bm(h.S)}}_{${S}}`;
+  return narrowReadout.matches ? `\\begin{gathered}${H}=${bm(h.H)}\\\\{}=${parts}\\end{gathered}`
+    : `${H}=\\underbrace{${bm(h.H)}}_{\\text{Hessian}}=${parts}`;
+};
 function readout(h, cls, he) {
-  const tex = `\\mathbf H_{ii}=\\underbrace{${bm(h.H)}}_{\\text{Hessian}}=\\underbrace{${bm(h.K)}}_{K\\,\\succeq\\,0}+\\underbrace{${bm(h.S)}}_{S}`;
+  const tex = matrixTex(h);
   if (tex !== lastTex) { katex.render(tex, $('mat'), {displayMode: true, throwOnError: false}); lastTex = tex;
     katex.render(`\\lambda_1=${f2(h.l1)},\\quad \\lambda_2=${f2(h.l2)}`, $('lam'), {throwOnError: false}); }
-  const tex2 = `\\langle\\mathbf H_{ii}\\rangle_M=\\underbrace{${bm(he.H)}}_{\\text{Hessian}}=\\underbrace{${bm(he.K)}}_{\\langle K\\rangle}+\\underbrace{${bm(he.S)}}_{\\langle S\\rangle}`;
+  const tex2 = matrixTex(he, true);
   if (tex2 !== lastTex2) { katex.render(tex2, $('mat2'), {displayMode: true, throwOnError: false}); lastTex2 = tex2;
     katex.render(`\\lambda_1=${f2(he.l1)},\\quad \\lambda_2=${f2(he.l2)}`, $('lam2'), {throwOnError: false}); }
-  const ce = he.l1 > 0 ? 'BOWL' : he.l2 < 0 ? 'DOME' : 'SADDLE'; $('verdict2').textContent = ce + ' — ensemble mean'; $('verdict2').style.color = 'var(--viz-ens)';
+  const ce = he.l1 > 0 ? 'BOWL' : he.l2 < 0 ? 'DOME' : 'SADDLE'; $('verdict2').textContent = ce; $('verdict2').style.color = 'var(--viz-ens)';
   const V = $('verdict'), col = cls === 'bowl' ? 'up' : cls === 'dome' ? 'down' : 'sad';
-  V.textContent = cls === 'bowl' ? 'BOWL — 어느 방향으로든 위로 휜다' : cls === 'dome' ? 'DOME — compression 의 transverse softening 이 stiffness 를 이긴다' : 'SADDLE — 한 방향은 위로, 다른 방향은 아래로 휜다';
-  V.style.color = `var(--viz-${col})`;
+  V.textContent = cls.toUpperCase();
+  V.title = cls === 'bowl' ? '어느 방향으로든 위로 휜다' : cls === 'dome' ? '두 방향 모두 아래로 휜다' : '한 방향은 위로, 다른 방향은 아래로 휜다';
+  V.style.color = `var(--type-${col})`;
   const dF = h.f - Fref; $('dF').textContent = (dF >= 0 ? '+' : '−') + Math.abs(dF).toFixed(1);
   $('nT').textContent = h.nt; $('nC').textContent = h.nc; $('gN').textContent = Math.hypot(...h.g).toFixed(2);
 }
-function rebuild() { Fref = Fi(X[sel], sel); buildContour(); buildSurface(); buildEnsLayer(); own = ownEigs(sel); drawLamCloud(); $('msinfo').textContent = `red grids: first ${MsS} (landscape) / ${MsC} (contour) of M = ${M} terminals; red readout uses all ${M}`; $('selinfo').textContent = `node ${sel} · degree ${deg[sel]}` + (sel === NET.sel ? ' · preset path' : ' · drag to move'); dirty = true; }
-let lastPos = '';
-function frame() {
-  if (playing && !dragging && sel === NET.sel) { t = (t + 1) % NET.anim.length; pos = NET.anim[t].slice(); }
-  if (elT !== null) { el += (elT - el) * 0.15; if (Math.abs(elT - el) < 1e-3) { el = elT; elT = null; } dirty = true; }
-  if (cam.spin && !rot) { az += 0.003; dirty = true; }
-  syncCam();
-  const key = pos.join() + sel;
-  if (key !== lastPos || dirty) {
-    const h = hess(pos, sel), cls = h.l1 > 0 ? 'bowl' : h.l2 < 0 ? 'dome' : 'saddle';
-    const he = eHess(pos, sel), ce = he.l1 > 0 ? 'bowl' : he.l2 < 0 ? 'dome' : 'saddle';
-    c1.clearRect(0, 0, W, W); if (contImg) blit(c1, contImg, contView); drawSprings(); drawNetwork(); drawVectors(h); drawEns(he); drawSurf(sv, surf, 's', cls, true); drawSurf(sv2, surf2, 'r', ce, false); readout(h, cls, he); lastPos = key; dirty = false;
-  }
-  requestAnimationFrame(frame);
+function rebuild() {
+  Fref = Fi(X[sel], sel); buildContour(); buildSurface(); buildEnsLayer(); own = ownEigs(sel); drawLamCloud();
+  $('msinfo').textContent = `red grids: first ${MsS} (landscape) / ${MsC} (contour) of M = ${M} terminals; red readout uses all ${M}`;
+  $('selinfo').textContent = `degree ${deg[sel]}` + (sel === NET.sel ? ' · preset path' : ' · drag to move');
+  $('node-choice').max = n - 1; $('node-choice').value = sel;
+  $('ens-count').textContent = `${M} terminals`;
+  $('viewer-status').textContent = `${NET.name}, node ${sel}, degree ${deg[sel]}`;
+  dirty = true;
 }
+// Physics depends on the selected graph, node and position, not on camera rotation.
+let lastPos = '', lastPlanKey = '', lastH = null, lastHE = null, lastFrame = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  if (document.hidden || !viewerVisible) { lastFrame = 0; return; }
+  if (lastFrame && now - lastFrame < 1000 / 30) return;
+  const steps = lastFrame ? Math.max(1, Math.round(Math.min(now - lastFrame, 80) / (1000 / 60))) : 1;
+  lastFrame = now;
+  if (playing && !dragging && sel === NET.sel) { t = (t + steps) % NET.anim.length; pos = NET.anim[t].slice(); }
+  if (elT !== null) { el += (elT - el) * (1 - Math.pow(0.85, steps)); if (Math.abs(elT - el) < 1e-3) { el = elT; elT = null; } dirty = true; }
+  if (cam.spin && !rot) { az += 0.003 * steps; dirty = true; }
+  const key = NET.name + '|' + sel + '|' + pos.join();
+  const moved = key !== lastPos || !lastH;
+  if (moved) {
+    lastH = hess(pos, sel); lastHE = eHess(pos, sel);
+    readout(lastH, lastH.l1 > 0 ? 'bowl' : lastH.l2 < 0 ? 'dome' : 'saddle', lastHE);
+    lastPos = key;
+  }
+  const planKey = key + '|' + [vz, vx, vy, planRevision].join();
+  if (planKey !== lastPlanKey) {
+    c1.clearRect(0, 0, W, W); if (contImg) blit(c1, contImg, contView);
+    drawSprings(); drawNetwork(); drawVectors(lastH); drawEns(lastHE); lastPlanKey = planKey;
+  }
+  if (moved || dirty) {
+    const cls = lastH.l1 > 0 ? 'bowl' : lastH.l2 < 0 ? 'dome' : 'saddle';
+    const ce = lastHE.l1 > 0 ? 'bowl' : lastHE.l2 < 0 ? 'dome' : 'saddle';
+    drawSurf(sv, surf, 's', cls, true); drawSurf(sv2, surf2, 'r', ce, false); syncCam(); dirty = false;
+  }
+}
+const visibilityObserver = new IntersectionObserver(entries => { viewerVisible = entries[0].isIntersecting; if (viewerVisible) dirty = true; }, {rootMargin: '120px'});
+visibilityObserver.observe($('viz'));
+narrowReadout.addEventListener('change', () => { lastTex = ''; lastTex2 = ''; lastPos = ''; dirty = true; });
+reducedMotion.addEventListener('change', e => { if (e.matches) { setPlay(false); cam.spin = false; $('cam-spin').checked = false; } });
 // ── interaction ──
 const lay = $('layers');
 const evp = e => { const c = e.target.closest('canvas'); const r = c.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * W, (e.clientY - r.top) / r.height * W]; };
@@ -678,13 +739,13 @@ lay.addEventListener('wheel', e => { if (!e.target.closest('canvas')) return; e.
 let pan = null; const ptr = new Map(); let pz0 = null;
 lay.addEventListener('pointerdown', e => {
   if (!e.target.closest('canvas')) return;
-  ptr.set(e.pointerId, evp(e));
+  ptr.set(e.pointerId, evp(e)); e.target.setPointerCapture(e.pointerId);
   if (ptr.size === 2) { const [p, q] = [...ptr.values()]; pz0 = [Math.hypot(p[0] - q[0], p[1] - q[1]), vz]; dragging = false; pan = null; return; }
   if (e.shiftKey) { pan = [...evp(e), vx, vy]; e.target.setPointerCapture(e.pointerId); return; }
-  const [a, b] = evp(e); let best = -1, bd = 22;
+  const [a, b] = evp(e), hit = (e.pointerType === 'touch' ? 22 : 12) * W / e.target.getBoundingClientRect().width; let best = -1, bd = hit;
   for (let j = 0; j < n; j++) { if (j === sel) continue; const [u, v] = toC(...X[j]); const dd = Math.hypot(u - a, v - b); if (dd < bd) { bd = dd; best = j; } }
   const [u0, v0] = toC(...pos);
-  if (best >= 0 && Math.hypot(u0 - a, v0 - b) > 24) { sel = best; pos = X[sel].slice(); setPlay(false); rebuild(); return; }
+  if (best >= 0 && Math.hypot(u0 - a, v0 - b) > hit) { sel = best; pos = X[sel].slice(); setPlay(false); rebuild(); return; }
   dragging = true; setPlay(false); pos = fromC(a, b); e.target.setPointerCapture(e.pointerId);
 });
 lay.addEventListener('pointermove', e => {
@@ -695,13 +756,26 @@ lay.addEventListener('pointermove', e => {
   if (dragging) pos = fromC(...evp(e)); });
 const lift = e => { ptr.delete(e.pointerId); if (ptr.size < 2) pz0 = null; dragging = false; pan = null; };
 lay.addEventListener('pointerup', lift); lay.addEventListener('pointercancel', lift);
+function chooseNode() {
+  const input = $('node-choice'); if (!input.reportValidity()) return;
+  const next = Number(input.value); if (!Number.isInteger(next) || next < 0 || next >= n) return;
+  sel = next; pos = X[sel].slice(); setPlay(false); rebuild();
+}
+$('node-apply').onclick = chooseNode;
+$('node-choice').onchange = chooseNode;
+$('node-choice').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); chooseNode(); } };
+lay.addEventListener('keydown', e => {
+  const moves = {ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1]};
+  if (e.key === 'Home') { e.preventDefault(); pos = X[sel].slice(); setPlay(false); dirty = true; }
+  else if (moves[e.key]) { e.preventDefault(); const step = span / (e.shiftKey ? 25 : 100), v = moves[e.key]; pos = [pos[0] + v[0] * step, pos[1] + v[1] * step]; setPlay(false); dirty = true; }
+});
 $('pz-in').onclick = () => zoomAt(1.5, W / 2, W / 2); $('pz-out').onclick = () => zoomAt(1 / 1.5, W / 2, W / 2);
 $('pz-fit').onclick = () => { vz = 1; vx = vy = 0; viewChanged(); };
 $('pz-node').onclick = () => { const [a, b] = toB(...pos); vz = 4; vx = -vz * (a - W / 2); vy = -vz * (b - W / 2); viewChanged(); };
 let rot = null;
 const touches = new Map(); let pinch = null;
 for (const cv of [sv, sv2]) {
-cv.addEventListener('pointerdown', e => { touches.set(e.pointerId, [e.clientX, e.clientY]); if (touches.size === 2) { const [p, q] = [...touches.values()]; pinch = [Math.hypot(p[0] - q[0], p[1] - q[1]), cam.zoom]; rot = null; return; } rot = [e.clientX, e.clientY, az, el]; cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing'; });
+cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); touches.set(e.pointerId, [e.clientX, e.clientY]); if (touches.size === 2) { const [p, q] = [...touches.values()]; pinch = [Math.hypot(p[0] - q[0], p[1] - q[1]), cam.zoom]; rot = null; return; } rot = [e.clientX, e.clientY, az, el]; cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing'; });
 cv.addEventListener('pointermove', e => { if (touches.has(e.pointerId)) touches.set(e.pointerId, [e.clientX, e.clientY]); if (pinch && touches.size === 2) { const [p, q] = [...touches.values()]; cam.zoom = Math.max(0.6, Math.min(3, pinch[1] * Math.hypot(p[0] - q[0], p[1] - q[1]) / pinch[0])); $('cam-zoom').value = cam.zoom * 100; dirty = true; return; } if (!rot) return; az = rot[2] + (e.clientX - rot[0]) * 0.01; el = Math.max(0.03, Math.min(1.45, rot[3] + (e.clientY - rot[1]) * 0.006)); elT = null; cam.spin = false; $('cam-spin').checked = false; viewBtn(null); dirty = true; });
 const up = e => { touches.delete(e.pointerId); if (touches.size < 2) pinch = null; rot = null; cv.style.cursor = 'grab'; };
 cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
@@ -746,12 +820,13 @@ function describe() {
   setMath('checks', `<tr><td>stress</td><td>$F=${ck.F.toFixed(2)}$</td></tr><tr><td>full $\\mathbf H$ 의 zero mode</td><td>${ck.n_zero} 개 = translation 2 + rotation 1</td></tr><tr><td>$\\lambda_{\\min}(\\mathbf H_\\perp)$</td><td>$${ck.lam_min.toFixed(3)}\\gt0$: terminal 은 $2N$ 차원 full space 에서 local minimum</td></tr><tr><td>$\\max_i\\lVert\\nabla_iF\\rVert$</td><td>$${sci(ck.grad)}$</td></tr><tr><td>analytic $\\mathbf H_{ii}$ vs finite difference</td><td>relative difference $${sci(ck.fd)}$</td></tr><tr><td>terminal</td><td>classical MDS → SMACOF → L-BFGS</td></tr><tr><td>NEI ensemble</td><td>$M=${M}$ (census protocol), $\\mathrm{NEI}=${NET.ens.nei.toFixed(4)}$. terminal stress: min $${NET.ens.Fmin.toFixed(1)}$, median $${NET.ens.Fmed.toFixed(1)}$, max $${NET.ens.Fmax.toFixed(1)}$, $\\max\\lVert\\nabla F\\rVert=${sci(NET.ens.gmax)}$. 기준 MDS terminal 보다 stress 가 낮은 ensemble terminal: ${(100 * NET.ens.pct).toFixed(1)}%</td></tr>`);
 }
 function loadNet(key) {
-  setNet(key); vz = 1; vx = vy = 0; sel = NET.sel; pos = X[sel].slice(); t = 0; lastTex = '';
+  setNet(key); vz = 1; vx = vy = 0; sel = NET.sel; pos = X[sel].slice(); t = 0; lastTex = ''; lastTex2 = ''; lastPos = ''; lastPlanKey = '';
   document.querySelectorAll('#nets button').forEach(b => b.setAttribute('aria-pressed', b.dataset.net === key));
   describe(); rebuild(); setPlay(!matchMedia('(prefers-reduced-motion: reduce)').matches);
 }
 $('nets').innerHTML = Object.keys(NETS).map(k => `<button type="button" data-net="${k}" aria-pressed="false">${NETS[k].name}</button>`).join('');
 $('nets').onclick = e => { const b = e.target.closest('button'); if (b) loadNet(b.dataset.net); };
+$('cam-spin').checked = cam.spin;
 readColors(); loadNet('__DEFAULT__');
 renderMathInElement(document.body, MATH);
 requestAnimationFrame(frame);
