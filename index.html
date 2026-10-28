@@ -268,10 +268,11 @@ $$F_i(\mathbf x)=\sum_{j\ne i}\bigl(\lVert\mathbf x-\mathbf x_j\rVert-\delta_{ij
   </div>
   <div class="landscape-panel">
     <div class="panel-t"><span>Landscape $F_i(\mathbf x)$</span> <div class="seg sm" role="group" aria-label="view"><button type="button" data-view="top" aria-pressed="false">top</button><button type="button" data-view="tilt" aria-pressed="true">tilt</button><button type="button" data-view="side" aria-pressed="false">side</button></div></div>
-    <div class="landscape-grid" aria-label="Single terminal 과 NEI ensemble 비교">
+    <div class="landscape-grid" aria-label="Single terminal 과 NEI ensemble 비교" aria-describedby="slice-interpretation">
       <div class="landscape-column"><canvas id="surf" width="1040" height="760" aria-label="3D landscape of F_i, single terminal"></canvas><div class="read"><div class="blue"><div class="read-head"><h3>single terminal</h3><span id="verdict"></span></div><div id="mat" tabindex="0" aria-label="Single terminal: Hessian, stiffness, prestress"></div><div class="verdict"><span id="lam"></span></div></div></div></div>
       <div class="landscape-column"><canvas id="surf2" width="1040" height="760" aria-label="3D landscape of the ensemble mean F_i"></canvas><div class="read"><div class="red"><div class="read-head"><h3>NEI ensemble · <span id="ens-count"></span></h3><span id="verdict2"></span></div><div id="mat2" tabindex="0" aria-label="Ensemble mean: Hessian, stiffness, prestress"></div><div class="verdict"><span id="lam2"></span></div></div></div></div>
     </div>
+    <p class="fine" id="slice-interpretation"><b>곡률 라벨.</b> BOWL / SADDLE / DOME 은 그 지점 Hessian 의 이차형식 모양이다. stationary point 가 아닌 곳에서는 minimum·saddle point·maximum 또는 Morse index 의 판정이 아니다.<br><b>Slice 장벽.</b> 다른 node 를 고정한 조건부 장벽이며, 모든 node 가 함께 움직이는 전체 landscape 의 최소 에너지 경로 장벽과는 다르다.</p>
     <div class="stat">
     <div>$F_i-F_i^{\rm term}$<b id="dF"></b></div>
     <div>tension pairs<b id="nT"></b></div>
@@ -325,6 +326,7 @@ $$\operatorname{tr}\mathbf H_{ii}=2(N-1)+\sum_{j\ne i}\omega_{ij},\qquad \text{D
 <caption>terminal 에서의 check (build 때 numpy 로 계산)</caption>
 <thead><tr><th scope="col">item</th><th scope="col">value</th></tr></thead>
 <tbody id="checks"></tbody></table></div>
+<noscript><p class="fine">Numbers 표의 값은 JavaScript 로 선택한 network 에 맞춰 채워진다. 수치를 보려면 JavaScript 를 활성화해야 한다.</p></noscript>
 </section>
 
 <section id="scope">
